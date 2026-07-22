@@ -1,16 +1,14 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useChat } from "../context/ChatContext";
-import { Database, MessageSquare, Clock, ArrowRight, Activity, ShieldCheck, Plus } from "lucide-react";
-import Card, { CardHeader, CardTitle, CardContent } from "../components/Card";
+import { Database, MessageSquare, Clock, ArrowRight, Activity } from "lucide-react";
+import Card from "../components/Card";
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const { activeConnection } = useChat();
   const navigate = useNavigate();
 
-  // Mock bar height data matching image 3 telemetry graph
+  // Mock bar height data matching telemetry graph
   const barHeights = [
     85, 35, 20, 15, 12, 10, 8, 7, 6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2
   ];
@@ -19,13 +17,13 @@ export const Dashboard = () => {
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Hero Banner Card */}
       <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-8 rounded-3xl shadow-2xs">
-        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+        <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
           Console Summary
         </span>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1.5 tracking-tight">
           Welcome back, {user?.username || "admin"}!
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-3xl leading-relaxed">
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-2 max-w-3xl leading-relaxed">
           Interact with relational databases using natural language prompts. The AI will translate, execute, format, and explain query results in real-time.
         </p>
       </Card>
@@ -35,7 +33,7 @@ export const Dashboard = () => {
         {/* Connected Databases */}
         <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Connected Databases
             </span>
             <h3 className="text-4xl font-black text-slate-900 dark:text-white mt-2">
@@ -50,7 +48,7 @@ export const Dashboard = () => {
         {/* Active Conversations */}
         <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Active Conversations
             </span>
             <h3 className="text-4xl font-black text-slate-900 dark:text-white mt-2">
@@ -65,7 +63,7 @@ export const Dashboard = () => {
         {/* Avg Latency */}
         <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Avg Latency (API)
             </span>
             <h3 className="text-4xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
@@ -106,7 +104,7 @@ export const Dashboard = () => {
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2">
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-400 mt-2 font-medium">
               <span>users/me</span>
               <span>connections</span>
               <span>chat/sessions/34/stream</span>
@@ -122,7 +120,7 @@ export const Dashboard = () => {
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Launch Workspace
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-6">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 mb-6">
               Configure connections or open an AI chat dialog immediately.
             </p>
 
@@ -131,13 +129,13 @@ export const Dashboard = () => {
               {/* Manage Catalogs */}
               <div
                 onClick={() => navigate("/connections")}
-                className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
+                className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
               >
                 <div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                     Manage Catalogs
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                     Add MySQL connection
                   </p>
                 </div>
@@ -147,13 +145,13 @@ export const Dashboard = () => {
               {/* Start SQL Prompt */}
               <div
                 onClick={() => navigate("/chat")}
-                className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
+                className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
               >
                 <div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                     Start SQL Prompt
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
                     Query with English
                   </p>
                 </div>
@@ -163,10 +161,10 @@ export const Dashboard = () => {
           </div>
 
           {/* Footer Bar */}
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
               <Clock size={14} />
-              <span>Audit Log Records: <strong>5 recent</strong></span>
+              <span>Audit Log Records: <strong className="text-slate-900 dark:text-white">5 recent</strong></span>
             </span>
             <Link
               to="/admin"

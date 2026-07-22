@@ -32,15 +32,15 @@ export const Chat = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-8.5rem)] flex flex-col bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs">
+    <div className="h-[calc(100vh-8.5rem)] flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs transition-colors">
       {/* Header */}
-      <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+      <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 rounded-xl">
             <Database size={20} />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">Neural SQL Chat Console</h2>
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Neural SQL Chat Console</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
               Target Catalog: <strong className="text-blue-600 dark:text-blue-400">{activeConnection?.name || "Internal MySQL DB"}</strong> ({activeConnection?.databaseName || "ai_db_assistant"})
             </p>
@@ -55,14 +55,14 @@ export const Chat = () => {
             {m.sender === "USER" ? (
               /* User Prompt Bubble */
               <div className="flex justify-end">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3.5 max-w-xl text-sm sm:text-base font-medium leading-relaxed shadow-md shadow-blue-500/20">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3.5 max-w-xl text-sm sm:text-base font-semibold leading-relaxed shadow-md shadow-blue-500/20">
                   {m.content}
                 </div>
               </div>
             ) : (
               /* AI Response Card Bubble */
               <div className="flex justify-start">
-                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl rounded-tl-none p-6 max-w-4xl text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 space-y-5 shadow-2xs">
+                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl rounded-tl-none p-6 max-w-4xl text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 space-y-5 shadow-2xs">
                   {/* Recommended SQL Code Block */}
                   {m.sqlQuery && (
                     <div className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-5 space-y-2.5">
@@ -112,7 +112,7 @@ export const Chat = () => {
                   )}
 
                   {/* Response Latency Tag */}
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-1.5 font-medium">
                     <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>AI Translation & Latency: <strong className="text-emerald-600 dark:text-emerald-400">{m.latency || "142 ms"}</strong></span>
                   </div>
@@ -124,7 +124,7 @@ export const Chat = () => {
 
         {isGenerating && (
           <div className="flex justify-start">
-            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center gap-2.5 animate-pulse border border-slate-200 dark:border-slate-700">
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2.5 animate-pulse border border-slate-200 dark:border-slate-700">
               <Sparkles size={18} />
               <span>Translating natural language prompt into optimized SQL...</span>
             </div>
@@ -139,7 +139,7 @@ export const Chat = () => {
           value={inputQuery}
           onChange={(e) => setInputQuery(e.target.value)}
           placeholder="Ask a question in plain English e.g., 'Show top 5 customers by revenue in 2026'"
-          className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm sm:text-base font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm sm:text-base font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
         <button
           type="submit"
