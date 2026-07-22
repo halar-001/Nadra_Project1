@@ -5,55 +5,50 @@ export const Logo = ({ size = "md" }) => {
 
   return (
     <div className="flex items-center gap-3 select-none">
+      {/* 3D Stacked Database Cylinder Logo Icon */}
       <div className="relative flex items-center justify-center shrink-0">
-        {/* Ambient Glow */}
-        <div className="absolute inset-0 bg-blue-500/20 blur-md rounded-full"></div>
         <svg
-          width={isSm ? "26" : "32"}
-          height={isSm ? "26" : "32"}
+          width={isSm ? "30" : "36"}
+          height={isSm ? "30" : "36"}
           viewBox="0 0 40 40"
           fill="none"
-          className="relative z-10 hover:scale-105 transition-transform"
+          className="hover:scale-105 transition-transform"
         >
           <defs>
-            <linearGradient id="logo-grad-primary" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#3B82F6" />
-              <stop offset="50%" stopColor="#6366F1" />
-              <stop offset="100%" stopColor="#8B5CF6" />
+            <linearGradient id="db-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#6366f1" />
+              <stop offset="50%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#a855f7" />
             </linearGradient>
-            <linearGradient id="logo-grad-accent" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#06B6D4" />
-              <stop offset="100%" stopColor="#3B82F6" />
+            <linearGradient id="db-cyan-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" />
+              <stop offset="100%" stopColor="#6366f1" />
             </linearGradient>
           </defs>
-          <path
-            d="M8 12C8 9.2 13.3 7 20 7C26.6 7 32 9.2 32 12C32 14.7 26.6 17 20 17C13.3 17 8 14.7 8 12Z"
-            fill="url(#logo-grad-primary)"
-          />
-          <path
-            d="M8 17C8 19.7 13.3 22 20 22C26.6 22 32 19.7 32 17M8 17V20C8 22.7 13.3 25 20 25C26.6 25 32 22.7 32 20V17"
-            stroke="url(#logo-grad-primary)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M8 25V28C8 30.7 13.3 33 20 33C26.6 33 32 30.7 32 28V25"
-            stroke="url(#logo-grad-primary)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M27 6L28.2 9.8L32 11L28.2 12.2L27 16L25.8 12.2L22 11L25.8 9.8L27 6Z"
-            fill="url(#logo-grad-accent)"
-          />
+          {/* Top Cylinder Disc */}
+          <ellipse cx="20" cy="11" rx="14" ry="5" fill="url(#db-purple-grad)" />
+          <ellipse cx="20" cy="11" rx="11" ry="3.5" fill="#a855f7" opacity="0.4" />
+          
+          {/* Middle Ring */}
+          <path d="M6 11 v7 c0 2.8 6.3 5 14 5 s14 -2.2 14 -5 v-7" fill="none" stroke="url(#db-purple-grad)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M6 18 v7 c0 2.8 6.3 5 14 5 s14 -2.2 14 -5 v-7" fill="none" stroke="url(#db-purple-grad)" strokeWidth="3" strokeLinecap="round" />
+          
+          {/* Bottom Ring */}
+          <path d="M6 25 v7 c0 2.8 6.3 5 14 5 s14 -2.2 14 -5 v-7" fill="none" stroke="url(#db-cyan-grad)" strokeWidth="3" strokeLinecap="round" />
         </svg>
       </div>
-      <div className="flex flex-col leading-none">
-        <span className={`font-extrabold tracking-tight text-slate-900 ${isSm ? "text-base" : "text-xl"}`}>
-          Data<span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">Pulse</span>
-          <span className="ml-1 text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200/80 rounded-md">
+
+      <div className="flex flex-col leading-tight">
+        <div className="flex items-center">
+          <span className={`font-black tracking-tight text-slate-900 dark:text-white ${isSm ? "text-lg" : "text-xl"}`}>
+            Data<span className="text-blue-600 dark:text-blue-400">Pulse</span>
+          </span>
+          <span className="ml-1.5 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/80 rounded-md">
             AI
           </span>
+        </div>
+        <span className="text-[9px] font-bold text-slate-400 dark:text-slate-400 tracking-widest uppercase mt-0.5">
+          Intelligent Database Assistant
         </span>
       </div>
     </div>

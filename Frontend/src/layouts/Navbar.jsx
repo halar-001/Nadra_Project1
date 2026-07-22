@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useChat } from "../context/ChatContext";
+import { useTheme } from "../context/ThemeContext";
 import { getHealth } from "../services/healthService";
-import { Activity, Database, Sun, Moon, LogOut } from "lucide-react";
+import { Sun, Moon, Menu } from "lucide-react";
 
-export const Navbar = () => {
-  const { user, logout } = useAuth();
-  const { activeConnection } = useChat();
+export const Navbar = ({ onToggleMobileSidebar }) => {
+  const { theme, toggleTheme } = useTheme();
   const [backendOnline, setBackendOnline] = useState(false);
 
   useEffect(() => {
@@ -16,45 +14,38 @@ export const Navbar = () => {
   }, []);
 
   return (
-    <header className="h-16 glass-panel border-b border-white/60 sticky top-0 z-10 px-8 flex items-center justify-between backdrop-blur-md">
-      <div className="flex items-center gap-4">
-        {/* Backend Health Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 border border-slate-200/60 shadow-2xs text-xs font-medium text-slate-700">
+    <header className="py-3 px-4 sm:px-8 flex items-center justify-between bg-transparent">
+      <div className="flex items-center gap-3">
+        {/* Mobile Hamburger Toggle */}
+        <button
+          onClick={onToggleMobileSidebar}
+          className="lg:hidden p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs"
+          aria-label="Toggle Sidebar Menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Backend Live Status Pill */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs text-xs font-semibold">
           <span
-            className={`h-2.5 w-2.5 rounded-full ${
-              backendOnline ? "bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50" : "bg-amber-500"
+            className={`h-2 w-2 rounded-full ${
+              backendOnline ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
             }`}
-          ></span>
-          <span className="font-mono text-[11px]">
-            Backend Status: <strong className={backendOnline ? "text-emerald-600" : "text-amber-600"}>{backendOnline ? "ONLINE (8080)" : "OFFLINE"}</strong>
+          />
+          <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">
+            API: <strong className={backendOnline ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600"}>{backendOnline ? "ONLINE (8080)" : "OFFLINE"}</strong>
           </span>
         </div>
-
-        {/* Active DB Catalog Tag */}
-        {activeConnection && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-200/80 text-xs text-blue-700 font-medium">
-            <Database size={13} className="text-blue-600" />
-            <span className="font-bold uppercase tracking-wider text-[10px]">{activeConnection.dbType}</span>
-            <span>•</span>
-            <span className="font-mono text-[11px]">{activeConnection.databaseName}</span>
-          </div>
-        )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="text-right hidden md:block">
-          <p className="text-xs font-bold text-slate-900">{user?.username}</p>
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest">{user?.role || "ADMIN"}</p>
-        </div>
-
-        <button
-          onClick={logout}
-          className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50/80 transition-colors border border-transparent hover:border-red-200/60"
-          title="Sign Out"
-        >
-          <LogOut size={16} />
-        </button>
-      </div>
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+        title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+      >
+        {theme === "dark" ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-slate-600" />}
+      </button>
     </header>
   );
 };
