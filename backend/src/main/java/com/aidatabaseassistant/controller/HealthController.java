@@ -1,5 +1,7 @@
 package com.aidatabaseassistant.controller;
 
+import com.aidatabaseassistant.dto.ApiResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,7 +13,7 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping("/health")
-    public Map<String, String> healthCheck() {
-        return Map.of("status", "UP");
+    public ResponseEntity<ApiResponse<Map<String, String>>> healthCheck() {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("status", "UP")));
     }
 }
