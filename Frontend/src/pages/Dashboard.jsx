@@ -1,158 +1,352 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Database, MessageSquare, Clock, ArrowRight, Activity } from "lucide-react";
+import {
+  Database,
+  MessageSquare,
+  Clock,
+  ArrowRight,
+  Activity,
+  Terminal,
+  Search,
+  Pause,
+  Play,
+  Copy,
+  Check,
+  TrendingUp,
+  ShieldCheck,
+  Zap
+} from "lucide-react";
 import Card from "../components/Card";
+
+// Initial Mock Logs Stream
+const INITIAL_LOGS = [
+  { id: 1, timestamp: "11:34:02", level: "INFO", module: "AUTH_SERVICE", message: "JWT token validated for user admin1@aidatabaseassistant.com" },
+  { id: 2, timestamp: "11:34:15", level: "SUCCESS", module: "SQL_PARSER", message: "Natural language query parsed into optimized AST in 4ms" },
+  { id: 3, timestamp: "11:34:16", level: "SUCCESS", module: "EXECUTOR", message: "Executed SELECT on mysql_prod_db (Returned 12 rows in 14ms)" },
+  { id: 4, timestamp: "11:35:01", level: "INFO", module: "CATALOG", message: "Active database pool connection verified for postgres_analytics" },
+  { id: 5, timestamp: "11:36:20", level: "SECURITY", module: "RBAC", message: "Access granted for resource /api/v1/connections (Role: ADMIN)" },
+  { id: 6, timestamp: "11:37:44", level: "WARN", module: "CACHE", message: "Schema Metadata cache hit ratio below threshold (84.2%)" },
+];
+
+const LATENCY_DATA = [
+  { endpoint: "/api/chat/stream", latency: 85, time: "11:30" },
+  { endpoint: "/api/connections", latency: 35, time: "11:31" },
+  { endpoint: "/api/users/me", latency: 20, time: "11:32" },
+  { endpoint: "/api/sql/validate", latency: 15, time: "11:33" },
+  { endpoint: "/api/auth/login", latency: 45, time: "11:34" },
+  { endpoint: "/api/chat/sessions", latency: 28, time: "11:35" },
+  { endpoint: "/api/schema/refresh", latency: 92, time: "11:36" },
+  { endpoint: "/api/health", latency: 8, time: "11:37" },
+  { endpoint: "/api/chat/stream", latency: 74, time: "11:38" },
+  { endpoint: "/api/users/me", latency: 18, time: "11:39" },
+];
 
 export const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Mock bar height data matching telemetry graph
-  const barHeights = [
-    85, 35, 20, 15, 12, 10, 8, 7, 6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2
-  ];
+  // Log Stream State
+  const [logs, setLogs] = useState(INITIAL_LOGS);
+  const [logFilter, setLogFilter] = useState("ALL");
+  const [logSearch, setLogSearch] = useState("");
+  const [isLiveStreaming, setIsLiveStreaming] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const logTerminalRef = useRef(null);
+
+  // Timeframe state for latency chart
+  const [timeframe, setTimeframe] = useState("1H");
+  const [activeHoverBar, setActiveHoverBar] = useState(null);
+
+  // Auto-generate live stream logs every 4 seconds when live is active
+  useEffect(() => {
+    if (!isLiveStreaming) return;
+
+    const mockMessages = [
+      { level: "SUCCESS", module: "EXECUTOR", message: "SQL Query executed successfully (Returned 8 rows in 11ms)" },
+      { level: "INFO", module: "LLM_SERVICE", message: "Prompt tokens processed: 142 | Completion tokens: 68" },
+      { level: "SECURITY", module: "AUDIT", message: "User session heartbeat acknowledged (IP: 192.168.1.45)" },
+      { level: "INFO", module: "CONNECTION_POOL", message: "Keep-alive ping to mysql_prod_db successful (9ms)" },
+      { level: "WARN", module: "RATE_LIMIT", message: "Client query frequency: 12 requests/min (Normal)" },
+    ];
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(" ")[0];
+      const randomMsg = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+
+      setLogs((prev) => [
+        ...prev.slice(-30),
+        {
+          id: Date.now(),
+          timestamp: timeStr,
+          level: randomMsg.level,
+          module: randomMsg.module,
+          message: randomMsg.message,
+        },
+      ]);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isLiveStreaming]);
+
+  // Auto scroll terminal log bottom
+  useEffect(() => {
+    if (isLiveStreaming && logTerminalRef.current) {
+      logTerminalRef.current.scrollTop = logTerminalRef.current.scrollHeight;
+    }
+  }, [logs, isLiveStreaming]);
+
+  // Filter logs
+  const filteredLogs = logs.filter((log) => {
+    const matchesFilter = logFilter === "ALL" || log.level === logFilter;
+    const matchesSearch =
+      log.message.toLowerCase().includes(logSearch.toLowerCase()) ||
+      log.module.toLowerCase().includes(logSearch.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  const handleCopyLogs = () => {
+    const text = filteredLogs.map((l) => `[${l.timestamp}] [${l.level}] [${l.module}] ${l.message}`).join("\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getLevelStyle = (level) => {
+    switch (level) {
+      case "SUCCESS":
+        return "text-emerald-400 bg-emerald-500/20 border border-emerald-500/40";
+      case "SECURITY":
+        return "text-purple-300 bg-purple-500/20 border border-purple-500/40";
+      case "WARN":
+        return "text-amber-300 bg-amber-500/20 border border-amber-500/40";
+      case "ERROR":
+        return "text-rose-400 bg-rose-500/20 border border-rose-500/40";
+      default:
+        return "text-sky-300 bg-sky-500/20 border border-sky-500/40";
+    }
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Hero Banner Card */}
-      <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-8 rounded-3xl shadow-2xs">
-        <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-          Console Summary
-        </span>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white mt-1.5 tracking-tight">
-          Welcome back, {user?.username || "admin"}!
-        </h1>
-        <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-2 max-w-3xl leading-relaxed">
-          Interact with relational databases using natural language prompts. The AI will translate, execute, format, and explain query results in real-time.
-        </p>
+    <div className="space-y-6 animate-in fade-in duration-300 pb-10">
+      {/* Hero Welcome Banner */}
+      <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xs relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/80 rounded-md">
+                Console Active
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Role: {user?.roles?.[0] || "ADMIN"}</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-2 tracking-tight">
+              Welcome back, {user?.fullName || user?.username || "Admin"}! 👋
+            </h1>
+            <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              Interact with relational databases using natural language prompts. Monitor telemetry, system logs, and query analytics in real-time.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => navigate("/chat")}
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs cursor-pointer flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
+            >
+              <Zap size={15} />
+              <span>Launch SQL Prompt</span>
+            </button>
+          </div>
+        </div>
       </Card>
 
-      {/* 3 Metric Cards Row */}
+      {/* 3 Interactive Stat Metric Cards with Sparklines */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Connected Databases */}
-        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Connected Databases
-            </span>
-            <h3 className="text-4xl font-black text-slate-900 dark:text-white mt-2">
-              2
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <Database size={22} />
-          </div>
-        </Card>
-
-        {/* Active Conversations */}
-        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Active Conversations
-            </span>
-            <h3 className="text-4xl font-black text-slate-900 dark:text-white mt-2">
-              15
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <MessageSquare size={22} />
+        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs relative overflow-hidden group hover:border-blue-500/40 transition-all">
+          <div className="flex flex-col justify-between h-full relative z-10">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  Connected Catalogs
+                </span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">2</h3>
+                  <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 rounded flex items-center gap-0.5 animate-pulse">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span> Live
+                  </span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/70 border border-blue-100 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                <Database size={18} />
+              </div>
+            </div>
+            {/* Minimal Sparkline SVG */}
+            <svg className="w-full h-10 mt-4 opacity-70" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <path d="M0,25 Q10,10 20,20 T40,15 T60,25 T80,10 T100,20 L100,30 L0,30 Z" fill="rgba(59, 130, 246, 0.1)" />
+              <path d="M0,25 Q10,10 20,20 T40,15 T60,25 T80,10 T100,20" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
+            </svg>
           </div>
         </Card>
 
-        {/* Avg Latency */}
-        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Avg Latency (API)
-            </span>
-            <h3 className="text-4xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-              94 ms
-            </h3>
+        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs relative overflow-hidden group hover:border-purple-500/40 transition-all">
+          <div className="flex flex-col justify-between h-full relative z-10">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  Active Queries (RPS)
+                </span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">142</h3>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center">
+                    <TrendingUp size={10} className="mr-0.5" /> +12% today
+                  </span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/70 border border-purple-100 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                <Activity size={18} />
+              </div>
+            </div>
+            {/* Sparkline Bar Graph */}
+            <div className="flex items-end gap-1.5 h-10 mt-4 opacity-70 w-full">
+              {[30, 50, 40, 70, 60, 90, 80, 100, 85, 95].map((val, i) => (
+                <div key={i} className="flex-1 bg-purple-200 dark:bg-purple-900/50 rounded-t-sm group-hover:bg-purple-400 dark:group-hover:bg-purple-500 transition-colors" style={{ height: `${val}%` }}></div>
+              ))}
+            </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <Clock size={22} />
+        </Card>
+
+        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+          <div className="flex flex-col justify-between h-full relative z-10">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  Avg Query Latency
+                </span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">14<span className="text-lg text-slate-500 ml-1">ms</span></h3>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-100 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
+                <Clock size={18} />
+              </div>
+            </div>
+            {/* Smooth Latency Sparkline */}
+            <svg className="w-full h-10 mt-4 opacity-70" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <path d="M0,20 Q15,5 30,15 T60,25 T80,10 T100,15" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="100" cy="15" r="3" fill="#10b981" className="animate-pulse" />
+            </svg>
           </div>
         </Card>
       </div>
 
-      {/* Two Column Layout: Telemetry & Workspace Actions */}
+      {/* Two Column Layout: Telemetry Latency Graph & Workspace Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Latency Chart */}
+        {/* Left: Interactive Telemetry Latency Bar Chart */}
         <Card glass={false} className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Activity size={18} className="text-emerald-500" />
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                   API & Query Execution Latency (ms)
                 </h3>
               </div>
-              <span className="px-2.5 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-md">
-                Live Telemetry
-              </span>
+
+              {/* Timeframe Buttons */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-[11px] font-bold">
+                {["1H", "24H", "7D"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTimeframe(t)}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      timeframe === t
+                        ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                        : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Custom SVG Bar Graph */}
-            <div className="h-44 w-full pt-4 pb-2 flex items-end justify-between gap-1 border-b border-slate-200 dark:border-slate-800">
-              {barHeights.map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center group relative">
-                  <div
-                    style={{ height: `${h}%` }}
-                    className="w-full bg-emerald-500 dark:bg-emerald-400 rounded-t-xs hover:bg-emerald-600 transition-all"
-                  />
+            {/* Interactive SVG Bar Graph */}
+            <div className="relative">
+              {activeHoverBar !== null && (
+                <div className="absolute top-0 right-0 bg-slate-950 text-white text-[11px] px-3 py-1.5 rounded-xl border border-slate-800 shadow-lg z-20 animate-in fade-in font-mono">
+                  <span className="text-emerald-400 font-bold">{LATENCY_DATA[activeHoverBar].latency} ms</span>
+                  <span className="text-slate-400 ml-2">({LATENCY_DATA[activeHoverBar].endpoint})</span>
                 </div>
-              ))}
+              )}
+
+              <div className="h-48 w-full pt-8 pb-2 flex items-end justify-between gap-2 border-b border-slate-200 dark:border-slate-800">
+                {LATENCY_DATA.map((item, i) => (
+                  <div
+                    key={i}
+                    onMouseEnter={() => setActiveHoverBar(i)}
+                    onMouseLeave={() => setActiveHoverBar(null)}
+                    className="flex-1 flex flex-col items-center group relative cursor-pointer h-full justify-end"
+                  >
+                    <div
+                      style={{ height: `${(item.latency / 100) * 100}%` }}
+                      className={`w-full rounded-t-md transition-all duration-300 ${
+                        activeHoverBar === i
+                          ? "bg-blue-600 dark:bg-blue-400 shadow-lg shadow-blue-500/50 scale-x-105"
+                          : "bg-emerald-500 dark:bg-emerald-400 hover:bg-emerald-600"
+                      }`}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-400 mt-2 font-medium">
-              <span>users/me</span>
-              <span>connections</span>
-              <span>chat/sessions/34/stream</span>
-              <span>chat/sessions/28</span>
-              <span>users/me</span>
+
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 font-medium">
+              <span>11:30</span>
+              <span>11:32</span>
+              <span>11:34</span>
+              <span>11:36</span>
+              <span>11:39 (Now)</span>
             </div>
           </div>
         </Card>
 
-        {/* Right Column: Launch Workspace */}
+        {/* Right: Quick Launch Workspace */}
         <Card glass={false} className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex flex-col justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Launch Workspace
             </h3>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 mb-6">
-              Configure connections or open an AI chat dialog immediately.
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 mb-4">
+              Manage connection catalogs or query your databases with AI.
             </p>
 
-            {/* Quick Action Cards */}
             <div className="space-y-3">
-              {/* Manage Catalogs */}
               <div
                 onClick={() => navigate("/connections")}
-                className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
+                className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/40 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
               >
                 <div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    Manage Catalogs
+                    Manage Database Catalogs
                   </h4>
                   <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                    Add MySQL connection
+                    Configure MySQL, PostgreSQL & SQLite pool settings
                   </p>
                 </div>
                 <ArrowRight size={16} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
               </div>
 
-              {/* Start SQL Prompt */}
               <div
                 onClick={() => navigate("/chat")}
-                className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
+                className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/40 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
               >
                 <div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    Start SQL Prompt
+                    Start SQL Prompt Assistant
                   </h4>
                   <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                    Query with English
+                    Query databases using natural English language
                   </p>
                 </div>
                 <ArrowRight size={16} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
@@ -160,22 +354,128 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Footer Bar */}
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
-              <Clock size={14} />
-              <span>Audit Log Records: <strong className="text-slate-900 dark:text-white">5 recent</strong></span>
+              <ShieldCheck size={15} className="text-emerald-500" />
+              <span>RBAC Status: <strong className="text-slate-900 dark:text-white">Secure</strong></span>
             </span>
             <Link
               to="/admin"
               className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
             >
-              <span>View Admin Console</span>
+              <span>Admin Console</span>
               <span>→</span>
             </Link>
           </div>
         </Card>
       </div>
+
+      {/* SYSTEM AUDIT LOGS WIDGET: LIGHT & DARK MODE COMPLIANT CARD CONTAINER */}
+      <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs space-y-4">
+        {/* Terminal Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-2.5">
+            {/* macOS Window Controls */}
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+
+            <div className="ml-3 flex items-center gap-2 text-xs font-mono font-extrabold text-slate-900 dark:text-white tracking-wide">
+              <Terminal size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>DataPulse System Audit Logs</span>
+            </div>
+
+            {isLiveStreaming && (
+              <span className="ml-2 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-md flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                LIVE STREAM
+              </span>
+            )}
+          </div>
+
+          {/* Terminal Actions & Filters */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Search Filter Input */}
+            <div className="relative flex items-center">
+              <Search size={13} className="absolute left-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Filter logs..."
+                value={logSearch}
+                onChange={(e) => setLogSearch(e.target.value)}
+                className="pl-8 pr-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Level Filter Buttons */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 font-mono text-[11px]">
+              {["ALL", "INFO", "SUCCESS", "WARN", "SECURITY"].map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setLogFilter(lvl)}
+                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-bold ${
+                    logFilter === lvl
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+
+            {/* Live Toggle Button */}
+            <button
+              onClick={() => setIsLiveStreaming(!isLiveStreaming)}
+              className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
+              title={isLiveStreaming ? "Pause Live Stream" : "Resume Live Stream"}
+            >
+              {isLiveStreaming ? <Pause size={14} /> : <Play size={14} className="text-emerald-500" />}
+            </button>
+
+            {/* Copy Logs Button */}
+            <button
+              onClick={handleCopyLogs}
+              className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors flex items-center gap-1 text-[11px]"
+              title="Copy logs"
+            >
+              {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Embedded High-Contrast Terminal Log Viewport */}
+        <div className="bg-[#090d16] p-4 rounded-2xl border border-slate-800 shadow-inner">
+          <div
+            ref={logTerminalRef}
+            className="h-60 w-full overflow-y-auto font-mono text-xs space-y-2 pr-2 custom-scrollbar select-text"
+          >
+            {filteredLogs.length === 0 ? (
+              <div className="text-slate-400 py-8 text-center text-xs">
+                No log entries match the selected filter query.
+              </div>
+            ) : (
+              filteredLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 hover:bg-[#131b2e] p-1.5 rounded-lg transition-colors leading-relaxed"
+                >
+                  <span className="text-slate-400 shrink-0 text-[11px] font-mono font-bold">[{log.timestamp}]</span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-extrabold border shrink-0 ${getLevelStyle(
+                      log.level
+                    )}`}
+                  >
+                    {log.level}
+                  </span>
+                  <span className="text-slate-300 font-bold shrink-0 text-[11px]">[{log.module}]</span>
+                  <span className="text-white font-medium text-xs font-mono">{log.message}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </Card>
     </div>
   );
 };
