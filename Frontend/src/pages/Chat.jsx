@@ -32,7 +32,7 @@ export const Chat = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-8.5rem)] flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs transition-colors">
+    <div className="h-[calc(100vh-6.5rem)] flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs transition-colors">
       {/* Header */}
       <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -55,34 +55,14 @@ export const Chat = () => {
             {m.sender === "USER" ? (
               /* User Prompt Bubble */
               <div className="flex justify-end">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3.5 max-w-xl text-sm sm:text-base font-semibold leading-relaxed shadow-md shadow-blue-500/20">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3.5 max-w-[85%] 2xl:max-w-3xl text-sm sm:text-base font-semibold leading-relaxed shadow-md shadow-blue-500/20">
                   {m.content}
                 </div>
               </div>
             ) : (
               /* AI Response Card Bubble */
-              <div className="flex justify-start">
-                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl rounded-tl-none p-6 max-w-4xl text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 space-y-5 shadow-2xs">
-                  {/* Recommended SQL Code Block */}
-                  {m.sqlQuery && (
-                    <div className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-5 space-y-2.5">
-                      <div className="flex justify-between items-center text-xs font-bold text-blue-600 dark:text-blue-400">
-                        <span className="flex items-center gap-1.5 uppercase tracking-wider">
-                          <CheckCircle size={15} className="text-emerald-500" />
-                          RECOMMENDED SQL QUERY
-                        </span>
-                      </div>
-                      <pre className="text-sm font-mono text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-950 p-4 rounded-xl overflow-x-auto leading-relaxed border border-slate-200/60 dark:border-slate-800">
-                        {m.sqlQuery}
-                      </pre>
-                    </div>
-                  )}
-
-                  {/* Natural Language Explanation */}
-                  <div className="text-slate-800 dark:text-slate-200 leading-relaxed text-sm sm:text-base font-medium whitespace-pre-line">
-                    {m.content}
-                  </div>
-
+              <div className="flex justify-start w-full">
+                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl rounded-tl-none p-6 w-full text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 space-y-5 shadow-2xs">
                   {/* Data Table */}
                   {m.queryResults && (
                     <div className="overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs max-h-72">
@@ -108,6 +88,26 @@ export const Chat = () => {
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  )}
+
+                  {/* Natural Language Explanation */}
+                  <div className="text-slate-800 dark:text-slate-200 leading-relaxed text-sm sm:text-base font-medium whitespace-pre-line">
+                    {m.content}
+                  </div>
+
+                  {/* Recommended SQL Code Block */}
+                  {m.sqlQuery && (
+                    <div className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-5 space-y-2.5">
+                      <div className="flex justify-between items-center text-xs font-bold text-blue-600 dark:text-blue-400">
+                        <span className="flex items-center gap-1.5 uppercase tracking-wider">
+                          <CheckCircle size={15} className="text-emerald-500" />
+                          RECOMMENDED SQL QUERY
+                        </span>
+                      </div>
+                      <pre className="text-sm font-mono text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-950 p-4 rounded-xl overflow-x-auto leading-relaxed border border-slate-200/60 dark:border-slate-800">
+                        {m.sqlQuery}
+                      </pre>
                     </div>
                   )}
 

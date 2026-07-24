@@ -47,7 +47,18 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
     { id: 4, title: "Show all users", path: "/chat?session=4" },
   ];
 
-  const userInitials = user?.username ? user.username.substring(0, 2).toUpperCase() : "AD";
+  const displayName = user?.fullName || user?.username || "User";
+  const userInitials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase() || "US";
+  const rawRole = user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER";
+  const formattedRole = typeof rawRole === "string" ? rawRole.replace("ROLE_", "") : "VIEWER";
+  const isAdmin = formattedRole.toUpperCase() === "ADMIN";
+
+  const visibleNavItems = mainNavItems.filter((item) => item.path !== "/admin" || isAdmin);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-sans border-r border-slate-200/90 dark:border-slate-800 shadow-xs transition-colors">
@@ -79,7 +90,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
 
       {/* Main Navigation Links */}
       <div className="px-3 py-4 space-y-1">
-        {mainNavItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
           return (
@@ -171,8 +182,8 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
               {userInitials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-black text-slate-900 dark:text-white truncate">{user?.username || "admin"}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize font-medium">{user?.role || "Admin"}</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white truncate">{displayName}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize font-medium">{formattedRole}</p>
             </div>
           </div>
         </button>
