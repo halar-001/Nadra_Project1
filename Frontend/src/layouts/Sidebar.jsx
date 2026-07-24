@@ -56,6 +56,9 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
     .toUpperCase() || "US";
   const rawRole = user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER";
   const formattedRole = typeof rawRole === "string" ? rawRole.replace("ROLE_", "") : "VIEWER";
+  const isAdmin = formattedRole.toUpperCase() === "ADMIN";
+
+  const visibleNavItems = mainNavItems.filter((item) => item.path !== "/admin" || isAdmin);
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-sans border-r border-slate-200/90 dark:border-slate-800 shadow-xs transition-colors">
@@ -87,7 +90,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
 
       {/* Main Navigation Links */}
       <div className="px-3 py-4 space-y-1">
-        {mainNavItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
           return (

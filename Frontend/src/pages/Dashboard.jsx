@@ -128,6 +128,9 @@ export const Dashboard = () => {
     }
   };
 
+  const userRoleStr = (user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER").replace("ROLE_", "");
+  const isAdmin = userRoleStr.toUpperCase() === "ADMIN";
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-10">
       {/* Hero Welcome Banner */}
@@ -370,112 +373,114 @@ export const Dashboard = () => {
         </Card>
       </div>
 
-      {/* SYSTEM AUDIT LOGS WIDGET: LIGHT & DARK MODE COMPLIANT CARD CONTAINER */}
-      <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs space-y-4">
-        {/* Terminal Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-2.5">
-            {/* macOS Window Controls */}
-            <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-            <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+      {/* SYSTEM AUDIT LOGS WIDGET: LIGHT & DARK MODE COMPLIANT CARD CONTAINER (ADMIN ONLY) */}
+      {isAdmin && (
+        <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs space-y-4">
+          {/* Terminal Header Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-4">
+            <div className="flex items-center gap-2.5">
+              {/* macOS Window Controls */}
+              <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+              <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+              <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
 
-            <div className="ml-3 flex items-center gap-2 text-xs font-mono font-extrabold text-slate-900 dark:text-white tracking-wide">
-              <Terminal size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>DataPulse System Audit Logs</span>
-            </div>
-
-            {isLiveStreaming && (
-              <span className="ml-2 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-md flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                LIVE STREAM
-              </span>
-            )}
-          </div>
-
-          {/* Terminal Actions & Filters */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* Search Filter Input */}
-            <div className="relative flex items-center">
-              <Search size={13} className="absolute left-2.5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Filter logs..."
-                value={logSearch}
-                onChange={(e) => setLogSearch(e.target.value)}
-                className="pl-8 pr-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono placeholder-slate-400 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            {/* Level Filter Buttons */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 font-mono text-[11px]">
-              {["ALL", "INFO", "SUCCESS", "WARN", "SECURITY"].map((lvl) => (
-                <button
-                  key={lvl}
-                  onClick={() => setLogFilter(lvl)}
-                  className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-bold ${
-                    logFilter === lvl
-                      ? "bg-blue-600 text-white shadow-2xs"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  {lvl}
-                </button>
-              ))}
-            </div>
-
-            {/* Live Toggle Button */}
-            <button
-              onClick={() => setIsLiveStreaming(!isLiveStreaming)}
-              className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
-              title={isLiveStreaming ? "Pause Live Stream" : "Resume Live Stream"}
-            >
-              {isLiveStreaming ? <Pause size={14} /> : <Play size={14} className="text-emerald-500" />}
-            </button>
-
-            {/* Copy Logs Button */}
-            <button
-              onClick={handleCopyLogs}
-              className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors flex items-center gap-1 text-[11px]"
-              title="Copy logs"
-            >
-              {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Embedded High-Contrast Terminal Log Viewport */}
-        <div className="bg-[#090d16] p-4 rounded-2xl border border-slate-800 shadow-inner">
-          <div
-            ref={logTerminalRef}
-            className="h-60 w-full overflow-y-auto font-mono text-xs space-y-2 pr-2 custom-scrollbar select-text"
-          >
-            {filteredLogs.length === 0 ? (
-              <div className="text-slate-400 py-8 text-center text-xs">
-                No log entries match the selected filter query.
+              <div className="ml-3 flex items-center gap-2 text-xs font-mono font-extrabold text-slate-900 dark:text-white tracking-wide">
+                <Terminal size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>DataPulse System Audit Logs</span>
               </div>
-            ) : (
-              filteredLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex flex-col sm:flex-row sm:items-center gap-2 hover:bg-[#131b2e] p-1.5 rounded-lg transition-colors leading-relaxed"
-                >
-                  <span className="text-slate-400 shrink-0 text-[11px] font-mono font-bold">[{log.timestamp}]</span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-extrabold border shrink-0 ${getLevelStyle(
-                      log.level
-                    )}`}
+
+              {isLiveStreaming && (
+                <span className="ml-2 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/30 rounded-md flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  LIVE STREAM
+                </span>
+              )}
+            </div>
+
+            {/* Terminal Actions & Filters */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* Search Filter Input */}
+              <div className="relative flex items-center">
+                <Search size={13} className="absolute left-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Filter logs..."
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-mono placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              {/* Level Filter Buttons */}
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-0.5 font-mono text-[11px]">
+                {["ALL", "INFO", "SUCCESS", "WARN", "SECURITY"].map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setLogFilter(lvl)}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-bold ${
+                      logFilter === lvl
+                        ? "bg-blue-600 text-white shadow-2xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
                   >
-                    {log.level}
-                  </span>
-                  <span className="text-slate-300 font-bold shrink-0 text-[11px]">[{log.module}]</span>
-                  <span className="text-white font-medium text-xs font-mono">{log.message}</span>
-                </div>
-              ))
-            )}
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+
+              {/* Live Toggle Button */}
+              <button
+                onClick={() => setIsLiveStreaming(!isLiveStreaming)}
+                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
+                title={isLiveStreaming ? "Pause Live Stream" : "Resume Live Stream"}
+              >
+                {isLiveStreaming ? <Pause size={14} /> : <Play size={14} className="text-emerald-500" />}
+              </button>
+
+              {/* Copy Logs Button */}
+              <button
+                onClick={handleCopyLogs}
+                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors flex items-center gap-1 text-[11px]"
+                title="Copy logs"
+              >
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+              </button>
+            </div>
           </div>
-        </div>
-      </Card>
+
+          {/* Embedded High-Contrast Terminal Log Viewport */}
+          <div className="bg-[#090d16] p-4 rounded-2xl border border-slate-800 shadow-inner">
+            <div
+              ref={logTerminalRef}
+              className="h-60 w-full overflow-y-auto font-mono text-xs space-y-2 pr-2 custom-scrollbar select-text"
+            >
+              {filteredLogs.length === 0 ? (
+                <div className="text-slate-400 py-8 text-center text-xs">
+                  No log entries match the selected filter query.
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 hover:bg-[#131b2e] p-1.5 rounded-lg transition-colors leading-relaxed"
+                  >
+                    <span className="text-slate-400 shrink-0 text-[11px] font-mono font-bold">[{log.timestamp}]</span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold border shrink-0 ${getLevelStyle(
+                        log.level
+                      )}`}
+                    >
+                      {log.level}
+                    </span>
+                    <span className="text-slate-300 font-bold shrink-0 text-[11px]">[{log.module}]</span>
+                    <span className="text-white font-medium text-xs font-mono">{log.message}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ShieldCheck, User, Mail, Lock, Key, CheckCircle2, AlertCircle, Save, KeyRound } from "lucide-react";
 import Card from "../components/Card";
 
 export const Profile = () => {
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, updateProfile, changePassword, logout } = useAuth();
+  const navigate = useNavigate();
 
   // Profile Edit State
   const [fullName, setFullName] = useState(user?.fullName || user?.username || "");
@@ -67,10 +69,16 @@ export const Profile = () => {
     setIsChangingPassword(true);
     try {
       const res = await changePassword(currentPassword, newPassword);
-      setPasswordSuccessMsg(res?.message || "Password changed successfully!");
+      setPasswordSuccessMsg(res?.message || "Password changed successfully! Signing out...");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+      
+      // Auto expire token and redirect to login after password change
+      setTimeout(async () => {
+        await logout();
+        navigate("/login?passwordChanged=true");
+      }, 1500);
     } catch (err) {
       setPasswordErrorMsg(err.message || "Incorrect current password. Please try again.");
     } finally {

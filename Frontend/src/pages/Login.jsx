@@ -30,6 +30,7 @@ export const Login = ({ initialTab = "login" }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionExpired = searchParams.get("expired") === "true";
+  const passwordChanged = searchParams.get("passwordChanged") === "true";
   
   const [activeTab, setActiveTab] = useState(initialTab);
   const [localError, setLocalError] = useState(null);
@@ -138,6 +139,13 @@ export const Login = ({ initialTab = "login" }) => {
               </div>
 
               {/* Alerts */}
+              {passwordChanged && activeTab === "login" && (
+                <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
+                  <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <p className="text-xs font-medium">Password changed successfully! Please sign in with your new password.</p>
+                </div>
+              )}
+
               {sessionExpired && activeTab === "login" && (
                 <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
                   <ShieldAlert size={16} className="mt-0.5 shrink-0" />
