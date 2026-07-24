@@ -114,7 +114,7 @@ export const AuthCarousel = () => {
 
   return (
     <div
-      className="hidden lg:flex flex-col justify-between w-full h-full p-6 sm:p-7 rounded-[1.75rem] bg-white/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-xl relative overflow-hidden shadow-xl text-slate-900 dark:text-white max-h-[560px]"
+      className="hidden lg:flex flex-col justify-between w-full h-full p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-xl relative overflow-hidden shadow-2xl text-slate-900 dark:text-white min-h-[500px]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
