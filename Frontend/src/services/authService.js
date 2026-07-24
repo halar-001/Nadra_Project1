@@ -38,6 +38,30 @@ export const authService = {
   },
 
   /**
+   * Update User Profile (fullName, email).
+   * @param {Object} data - { fullName, email }
+   */
+  async updateProfile(data) {
+    const response = await api.put("/auth/profile", {
+      fullName: data.fullName,
+      email: data.email,
+    });
+    return response.data;
+  },
+
+  /**
+   * Change User Password.
+   * @param {Object} data - { currentPassword, newPassword }
+   */
+  async changePassword(data) {
+    const response = await api.put("/auth/change-password", {
+      currentPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    });
+    return response.data;
+  },
+
+  /**
    * Logout user session on backend.
    */
   async logout() {

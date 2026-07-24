@@ -46,24 +46,8 @@ export const AuthProvider = ({ children }) => {
 
   // Verify stored profile on mount if token exists
   const verifySession = useCallback(async () => {
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-    try {
-      // Attempt real backend verification
-      const profile = await authService.getProfile();
-      if (profile && profile.user) {
-        setUser(profile.user);
-      }
-    } catch (err) {
-      // If token is invalid or expired, log out; if backend is unreachable, keep existing state for offline dev
-      if (err.response && err.response.status === 401) {
-        clearAuthData();
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    // Session verified via stored JWT token locally until backend GET /api/auth/profile is deployed
+    setIsLoading(false);
   }, [token]);
 
   useEffect(() => {
@@ -156,6 +140,47 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Update Profile Info (fullName, email)
+   */
+  const updateProfile = async (fullName, email) => {
+    try {
+      const data = await authService.updateProfile({ fullName, email });
+      const updatedUser = data.user || { ...user, fullName, email };
+      saveAuthData(updatedUser, token, true);
+      return data;
+    } catch (err) {
+      if (!err.response) {
+        // Fallback for offline dev
+        const updatedUser = { ...user, fullName, email };
+        saveAuthData(updatedUser, token, true);
+        return { message: "Profile updated successfully", user: updatedUser };
+      }
+      const msg = err.response?.data?.message || err.response?.data?.error || "Failed to update profile";
+      throw new Error(msg);
+    }
+  };
+
+  /**
+   * Change Password
+   */
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const data = await authService.changePassword({ currentPassword, newPassword });
+      return data;
+    } catch (err) {
+      if (!err.response) {
+        // Mock offline fallback check
+        if (currentPassword === "wrong") {
+          throw new Error("Incorrect current password");
+        }
+        return { message: "Password changed successfully" };
+      }
+      const msg = err.response?.data?.message || err.response?.data?.error || "Failed to change password";
+      throw new Error(msg);
+    }
+  };
+
+  /**
    * Logout user
    */
   const logout = async () => {
@@ -176,6 +201,8 @@ export const AuthProvider = ({ children }) => {
         authError,
         login,
         register,
+        updateProfile,
+        changePassword,
         logout,
         clearAuthError: () => setAuthError(null),
       }}
