@@ -28,8 +28,8 @@ public class EmailService {
             message.setTo(toEmail);
             message.setSubject("Your OTP for AI Database Assistant");
             message.setText("Welcome to AI Database Assistant! Your OTP for registration is: " + otp + "\nThis OTP is valid for 10 minutes.");
-            javaMailSender.send(message);
-            logger.info("Successfully sent OTP email to {}", toEmail);
+            // javaMailSender.send(message);
+            logger.info("Mocked: Successfully sent OTP email to {}", toEmail);
         } catch (Exception e) {
             logger.warn("Failed to send real email to {}. But you can use the OTP logged above for testing! Error: {}", toEmail, e.getMessage());
         }

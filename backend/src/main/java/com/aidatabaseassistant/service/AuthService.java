@@ -1,13 +1,10 @@
 package com.aidatabaseassistant.service;
 
-import com.aidatabaseassistant.dto.*;
-import com.aidatabaseassistant.entity.Role;
-import com.aidatabaseassistant.entity.RoleName;
-import com.aidatabaseassistant.entity.User;
-import com.aidatabaseassistant.repository.RoleRepository;
-import com.aidatabaseassistant.repository.UserRepository;
-import com.aidatabaseassistant.security.JwtService;
-import com.aidatabaseassistant.security.UserDetailsImpl;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,10 +12,20 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
+import com.aidatabaseassistant.dto.ChangePasswordRequest;
+import com.aidatabaseassistant.dto.LoginRequest;
+import com.aidatabaseassistant.dto.LoginResponse;
+import com.aidatabaseassistant.dto.RegisterRequest;
+import com.aidatabaseassistant.dto.UpdateProfileRequest;
+import com.aidatabaseassistant.dto.UserResponse;
+import com.aidatabaseassistant.dto.VerifyOtpRequest;
+import com.aidatabaseassistant.entity.Role;
+import com.aidatabaseassistant.entity.RoleName;
+import com.aidatabaseassistant.entity.User;
+import com.aidatabaseassistant.repository.RoleRepository;
+import com.aidatabaseassistant.repository.UserRepository;
+import com.aidatabaseassistant.security.JwtService;
+import com.aidatabaseassistant.security.UserDetailsImpl;
 
 @Service
 public class AuthService {
@@ -115,6 +122,51 @@ public class AuthService {
                 .token(jwt)
                 .user(userResponse)
                 .build();
+    }
+
+    public UserResponse getUserProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getRoleName().name())
+                .collect(Collectors.toList());
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .enabled(user.isEnabled())
+                .roles(roles)
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
+
+    public UserResponse updateProfile(String currentEmail, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email is already in use by another account");
+        }
+
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        userRepository.save(user);
+
+        return getUserProfile(user.getEmail());
+    }
+
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Incorrect current password");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     private String generateOtp() {

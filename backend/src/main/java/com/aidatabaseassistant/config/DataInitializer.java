@@ -37,7 +37,7 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = roleRepository.findByRoleName(RoleName.ROLE_ADMIN).get();
         String adminPassword = passwordEncoder.encode("Admin@12345");
 
-        List<String> adminEmails = List.of("taimoorajmal00@gmail.com", "halarkhan00000@gmail.com");
+        List<String> adminEmails = List.of("admin1@aidatabaseassistant.com", "admin2@aidatabaseassistant.com");
 
         for (int i = 0; i < adminEmails.size(); i++) {
             String email = adminEmails.get(i);
