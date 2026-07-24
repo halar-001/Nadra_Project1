@@ -38,5 +38,22 @@ This phase establishes the core architecture, foundational integrations, and glo
 
 ---
 
+### Phase 2: Authentication & User Management (IN PROGRESS)
+
+This phase establishes a robust and secure authentication system supporting JWT-based stateless sessions, user registration, role-based access control, and protected routes.
+
+#### 📅 Day 1: Security Foundation & Entities
+- **Database Architecture**: Engineered secure `User` and `Role` entities featuring a Many-To-Many database relationship to seamlessly support extensive Role-Based Access Control (RBAC).
+- **Security Infrastructure**: Implemented a comprehensive JWT architecture using `io.jsonwebtoken`. Built a stateless Spring Security `SecurityFilterChain` with a custom `JwtAuthenticationFilter` that flawlessly extracts and validates Bearer tokens.
+- **Repository Layer**: Expanded `UserRepository` and `RoleRepository` for lightning-fast database interactions.
+
+#### 📅 Day 2: Core Authentication Logic & Integration
+- **Business Logic**: Developed `AuthService` handling full Registration (with automated OTP generation), OTP Account Verification, and Login flow (validating credentials and dispatching JWT tokens alongside user roles).
+- **API Endpoints**: Exposed the securely configured `/api/auth/register`, `/api/auth/verify-otp`, and `/api/auth/login` endpoints within `AuthController`.
+- **System Bootstrapping**: Implemented `DataInitializer` to automatically seed `ROLE_ADMIN`, `ROLE_USER`, and `ROLE_VIEWER` roles and instantly provision pre-seeded Developer Admin accounts on startup.
+- **Frontend-Backend Symphony**: Successfully configured `CorsConfig` allowing the React frontend (`localhost:5173`) to effortlessly connect to the backend. Ran rigorous browser subagent tests verifying the entire frontend UI login flow interacting flawlessly with the backend database.
+
+---
+
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
