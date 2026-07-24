@@ -139,7 +139,7 @@ export const Dashboard = () => {
               <span className="px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/80 rounded-md">
                 Console Active
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Role: {user?.roles?.[0] || "ADMIN"}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Role: {(user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER").replace("ROLE_", "")}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-2 tracking-tight">
               Welcome back, {user?.fullName || user?.username || "Admin"}! 👋

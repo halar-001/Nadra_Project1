@@ -23,7 +23,7 @@ export const Profile = () => {
             <p className="text-xs text-slate-500 font-mono mt-0.5">{user?.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200/80 rounded-md text-[10px] uppercase font-bold tracking-widest">
-                Role: {user?.role || "ADMIN"}
+                Role: {(user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER").replace("ROLE_", "")}
               </span>
               <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 <ShieldCheck size={12} />
@@ -36,11 +36,13 @@ export const Profile = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
           <div className="glass-panel p-4 rounded-xl space-y-1">
             <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">User Account ID</span>
-            <p className="font-mono text-sm font-bold text-slate-900">{user?.id}</p>
+            <p className="font-mono text-sm font-bold text-slate-900">{user?.id || 1}</p>
           </div>
           <div className="glass-panel p-4 rounded-xl space-y-1">
             <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">Security Clearance</span>
-            <p className="font-semibold text-sm text-slate-900">System Administrator</p>
+            <p className="font-semibold text-sm text-slate-900">
+              {(user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "").includes("ADMIN") ? "System Administrator" : "Standard Viewer"}
+            </p>
           </div>
         </div>
       </div>

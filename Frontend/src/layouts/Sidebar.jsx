@@ -47,14 +47,15 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
     { id: 4, title: "Show all users", path: "/chat?session=4" },
   ];
 
-  const displayName = user?.fullName || user?.username || "Admin User";
+  const displayName = user?.fullName || user?.username || "User";
   const userInitials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .substring(0, 2)
-    .toUpperCase() || "AD";
-  const formattedRole = user?.role ? user.role.replace("ROLE_", "") : "ADMIN";
+    .toUpperCase() || "US";
+  const rawRole = user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER";
+  const formattedRole = typeof rawRole === "string" ? rawRole.replace("ROLE_", "") : "VIEWER";
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-sans border-r border-slate-200/90 dark:border-slate-800 shadow-xs transition-colors">
