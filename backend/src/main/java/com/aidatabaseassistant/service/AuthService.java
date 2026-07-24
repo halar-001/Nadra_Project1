@@ -18,7 +18,7 @@ import com.aidatabaseassistant.dto.LoginResponse;
 import com.aidatabaseassistant.dto.RegisterRequest;
 import com.aidatabaseassistant.dto.UpdateProfileRequest;
 import com.aidatabaseassistant.dto.UserResponse;
-import com.aidatabaseassistant.dto.VerifyOtpRequest;
+
 import com.aidatabaseassistant.entity.Role;
 import com.aidatabaseassistant.entity.RoleName;
 import com.aidatabaseassistant.entity.User;
@@ -35,15 +35,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final EmailService emailService;
-
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, EmailService emailService) {
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.emailService = emailService;
     }
 
     public void register(RegisterRequest request) {
@@ -54,44 +51,18 @@ public class AuthService {
         Role viewerRole = roleRepository.findByRoleName(RoleName.ROLE_VIEWER)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
 
-        String otp = generateOtp();
-
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .enabled(false) // disabled until OTP is verified
-                .otp(otp)
-                .otpExpiry(LocalDateTime.now().plusMinutes(10))
+                .enabled(true)
                 .build();
 
         user.getRoles().add(viewerRole);
         userRepository.save(user);
-
-        emailService.sendOtpEmail(user.getEmail(), otp);
     }
 
-    public void verifyOtp(VerifyOtpRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (user.isEnabled()) {
-            throw new RuntimeException("User is already verified");
-        }
-
-        if (user.getOtp() == null || !user.getOtp().equals(request.getOtp())) {
-            throw new RuntimeException("Invalid OTP");
-        }
-
-        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP has expired");
-        }
-
-        user.setEnabled(true);
-        user.setOtp(null);
-        user.setOtpExpiry(null);
-        userRepository.save(user);
-    }
 
     public LoginResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -99,10 +70,6 @@ public class AuthService {
         );
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
-        if (!userDetails.isEnabled()) {
-            throw new RuntimeException("Account is not verified. Please verify your email via OTP.");
-        }
 
         String jwt = jwtService.generateToken(userDetails);
 
@@ -169,9 +136,5 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    private String generateOtp() {
-        Random random = new Random();
-        int otp = 100000 + random.nextInt(900000); // 6-digit OTP
-        return String.valueOf(otp);
-    }
+
 }

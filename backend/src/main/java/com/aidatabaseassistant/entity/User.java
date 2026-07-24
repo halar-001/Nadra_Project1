@@ -28,12 +28,6 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(name = "otp")
-    private String otp;
-
-    @Column(name = "otp_expiry")
-    private LocalDateTime otpExpiry;
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -49,14 +43,12 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String fullName, String email, String password, boolean enabled, String otp, LocalDateTime otpExpiry, LocalDateTime createdAt, Set<Role> roles) {
+    public User(Long id, String fullName, String email, String password, boolean enabled, LocalDateTime createdAt, Set<Role> roles) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.password = password;
         this.enabled = enabled;
-        this.otp = otp;
-        this.otpExpiry = otpExpiry;
         this.createdAt = createdAt;
         this.roles = roles;
     }
@@ -101,22 +93,6 @@ public class User {
         this.enabled = enabled;
     }
 
-    public String getOtp() {
-        return otp;
-    }
-
-    public void setOtp(String otp) {
-        this.otp = otp;
-    }
-
-    public LocalDateTime getOtpExpiry() {
-        return otpExpiry;
-    }
-
-    public void setOtpExpiry(LocalDateTime otpExpiry) {
-        this.otpExpiry = otpExpiry;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -143,8 +119,6 @@ public class User {
         private String email;
         private String password;
         private boolean enabled = true;
-        private String otp;
-        private LocalDateTime otpExpiry;
         private LocalDateTime createdAt;
         private Set<Role> roles = new HashSet<>();
 
@@ -173,16 +147,6 @@ public class User {
             return this;
         }
 
-        public Builder otp(String otp) {
-            this.otp = otp;
-            return this;
-        }
-
-        public Builder otpExpiry(LocalDateTime otpExpiry) {
-            this.otpExpiry = otpExpiry;
-            return this;
-        }
-
         public Builder createdAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -194,7 +158,7 @@ public class User {
         }
 
         public User build() {
-            return new User(id, fullName, email, password, enabled, otp, otpExpiry, createdAt, roles);
+            return new User(id, fullName, email, password, enabled, createdAt, roles);
         }
     }
 }

@@ -3,7 +3,7 @@ package com.aidatabaseassistant.controller;
 import com.aidatabaseassistant.dto.LoginRequest;
 import com.aidatabaseassistant.dto.LoginResponse;
 import com.aidatabaseassistant.dto.RegisterRequest;
-import com.aidatabaseassistant.dto.VerifyOtpRequest;
+
 import com.aidatabaseassistant.dto.UserResponse;
 import com.aidatabaseassistant.dto.ApiResponse;
 import com.aidatabaseassistant.dto.UpdateProfileRequest;
@@ -29,13 +29,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
-        return ResponseEntity.ok(Map.of("message", "Registration successful! Please check your email for the OTP to verify your account."));
-    }
-
-    @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
-        authService.verifyOtp(request);
-        return ResponseEntity.ok(Map.of("message", "Account verified successfully! You can now log in."));
+        return ResponseEntity.ok(Map.of("message", "Registration successful! You can now log in."));
     }
 
     @PostMapping("/login")
