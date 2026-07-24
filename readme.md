@@ -38,7 +38,7 @@ This phase establishes the core architecture, foundational integrations, and glo
 
 ---
 
-### Phase 2: Authentication & User Management (IN PROGRESS)
+### Phase 2: Authentication & User Management (COMPLETE)
 
 This phase establishes a robust and secure authentication system supporting JWT-based stateless sessions, user registration, role-based access control, and protected routes.
 
@@ -53,7 +53,16 @@ This phase establishes a robust and secure authentication system supporting JWT-
 - **System Bootstrapping**: Implemented `DataInitializer` to automatically seed `ROLE_ADMIN`, `ROLE_USER`, and `ROLE_VIEWER` roles and instantly provision pre-seeded Developer Admin accounts on startup.
 - **Frontend-Backend Symphony**: Successfully configured `CorsConfig` allowing the React frontend (`localhost:5173`) to effortlessly connect to the backend. Ran rigorous browser subagent tests verifying the entire frontend UI login flow interacting flawlessly with the backend database.
 
----
+#### 📅 Day 3: Stateless Architecture & Error Handling
+- **Stateless JWT Security Architecture**: Locked down the backend using a stateless JWT filter chain. Whitelisted public routes for authentication and swagger documentation.
+- **JWT Interceptor Filter**: Built an interceptor filter to seamlessly parse `Bearer` tokens on every secure incoming request, translating them directly into Spring `SecurityContext` authentication objects.
+- **Global Error Handling**: Upgraded the `GlobalExceptionHandler` to seamlessly intercept and format security exceptions and invalid JWT signals, wrapping them in a consistent `{ status: false, error: "..." }` payload structure.
+
+#### 📅 Day 4: Profile Management & Frictionless Registration
+- **User Profile & Registration Logic**: Implemented automated password hashing via `BCrypt` and strictly assigned the `ROLE_VIEWER` role upon creation, preventing privilege escalation. Refactored registration to immediately enable user accounts and discarded the OTP system for a frictionless user experience.
+- **Account Management Endpoints**: Deployed robust endpoints to seamlessly return authenticated user profile details (`GET /api/auth/profile`), update Full Name and Email safely (`PUT /api/auth/profile`), and allow users to rotate passwords securely (`PUT /api/auth/change-password`).
+- **End-to-End Verification**: Conducted rigorous automated browser testing verifying that the entire registration, login, and dashboard navigation flow operates flawlessly end-to-end without OTP interruptions.
+
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
