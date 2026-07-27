@@ -26,54 +26,87 @@ const MOCK_CONNECTIONS = [
 ];
 
 export const ConnectionProvider = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  const [connections, setConnections] = useState(MOCK_CONNECTIONS);
+  const { user, isAuthenticated } = useAuth();
+  const userKey = user?.email || user?.id || "guest";
+
+  const [connections, setConnections] = useState([]);
   const [selectedConnectionId, setSelectedConnectionIdState] = useState(() => {
-    const saved = localStorage.getItem("selectedConnectionId");
+    const saved = localStorage.getItem(`selectedConnectionId_${userKey}`);
     return saved ? Number(saved) : 1;
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Set selected connection ID & persist to localStorage
+  // Helper to load user's offline connections
+  const getOfflineUserConnections = useCallback(() => {
+    const raw = localStorage.getItem(`user_connections_${userKey}`);
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return [];
+      }
+    }
+    return MOCK_CONNECTIONS;
+  }, [userKey]);
+
+  // Set selected connection ID & persist per user
   const setSelectedConnectionId = (id) => {
     const numId = Number(id);
     setSelectedConnectionIdState(numId);
-    localStorage.setItem("selectedConnectionId", String(numId));
+    localStorage.setItem(`selectedConnectionId_${userKey}`, String(numId));
   };
 
   // Fetch connections from backend API
   const fetchConnections = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setConnections([]);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
       const res = await connectionService.getConnections();
-      const list = res?.data || res || [];
-      if (Array.isArray(list) && list.length > 0) {
+      const list = res?.data || res;
+      if (Array.isArray(list)) {
         setConnections(list);
-        // If current selectedConnectionId is invalid, set to first connection
-        if (!list.some((c) => c.id === selectedConnectionId)) {
-          setSelectedConnectionId(list[0].id);
+        if (list.length > 0) {
+          if (!list.some((c) => c.id === selectedConnectionId)) {
+            setSelectedConnectionId(list[0].id);
+          }
         }
+        return;
       }
+      throw new Error("Invalid response format");
     } catch (err) {
-      // Keep mock connections for offline dev
-      console.warn("Backend connections endpoint not reachable, using local connection state.", err?.message);
+      // Fallback: Use per-user local storage
+      console.warn("Backend connections API offline, using per-user local state.", err?.message);
+      const localList = getOfflineUserConnections();
+      setConnections(localList);
+      if (localList.length > 0 && !localList.some((c) => c.id === selectedConnectionId)) {
+        setSelectedConnectionId(localList[0].id);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, selectedConnectionId]);
+  }, [isAuthenticated, selectedConnectionId, getOfflineUserConnections, userKey]);
 
   useEffect(() => {
     fetchConnections();
-  }, [fetchConnections]);
+  }, [userKey, isAuthenticated]);
 
   // Test connection credentials
   const testConnection = async (data) => {
     try {
-      return await connectionService.testConnection(data);
+      const res = await connectionService.testConnection(data);
+      if (res && (res.success === false || res.data?.success === false)) {
+        throw new Error(res.message || res.data?.message || "JDBC connection failed. Verify database username, password, host, and port.");
+      }
+      return res;
     } catch (err) {
+      if (err.response?.status === 403 || err.response?.status === 401) {
+        throw new Error("Session expired or unauthorized (403 Forbidden). Please log out and log in again.");
+      }
       const msg = err.response?.data?.message || err.message || "Database connection test failed";
       throw new Error(msg);
     }
@@ -90,9 +123,10 @@ export const ConnectionProvider = ({ children }) => {
       }
       return res;
     } catch (err) {
-      // Fallback for offline dev
+      // Fallback for offline dev: save into user-isolated local storage
       const newConn = {
         id: Date.now(),
+        userEmail: user?.email,
         connectionName: data.connectionName || data.databaseName,
         databaseType: data.databaseType,
         host: data.host,
@@ -100,9 +134,13 @@ export const ConnectionProvider = ({ children }) => {
         databaseName: data.databaseName,
         username: data.username,
       };
-      setConnections((prev) => [...prev, newConn]);
+      setConnections((prev) => {
+        const updated = [...prev, newConn];
+        localStorage.setItem(`user_connections_${userKey}`, JSON.stringify(updated));
+        return updated;
+      });
       setSelectedConnectionId(newConn.id);
-      return { success: true, message: "Connection saved locally", data: newConn };
+      return { success: true, message: "Connection saved locally for user", data: newConn };
     }
   };
 
@@ -130,6 +168,17 @@ export const ConnectionProvider = ({ children }) => {
     }
   };
 
+  // Fetch admin connections across all users
+  const fetchAdminConnections = async () => {
+    try {
+      const res = await connectionService.getAdminConnections();
+      return res?.data || res || [];
+    } catch (err) {
+      console.warn("Could not fetch admin connections endpoint, fallback to current user connections.", err?.message);
+      return connections;
+    }
+  };
+
   const selectedConnection = connections.find((c) => c.id === Number(selectedConnectionId)) || connections[0];
 
   return (
@@ -140,6 +189,7 @@ export const ConnectionProvider = ({ children }) => {
         selectedConnection,
         setSelectedConnectionId,
         fetchConnections,
+        fetchAdminConnections,
         testConnection,
         addConnection,
         updateConnection,

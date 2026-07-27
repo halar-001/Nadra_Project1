@@ -1,14 +1,17 @@
-import React, { useState } from "react";
-import { Plus, X, Eye, Settings, Trash2, RotateCw, CheckCircle2, AlertCircle, Database, Check } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, X, Eye, Settings, Trash2, RotateCw, CheckCircle2, AlertCircle, Database, Check, UserCheck, Shield } from "lucide-react";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import { useConnection } from "../context/ConnectionContext";
+import { useAuth } from "../context/AuthContext";
 
 export const Connections = () => {
+  const { user } = useAuth();
   const {
     connections,
     selectedConnectionId,
     setSelectedConnectionId,
+    fetchAdminConnections,
     testConnection,
     addConnection,
     updateConnection,
@@ -16,8 +19,17 @@ export const Connections = () => {
     isLoading,
   } = useConnection();
 
+  const rawRole = user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER";
+  const formattedRole = typeof rawRole === "string" ? rawRole.replace("ROLE_", "") : "VIEWER";
+  const isAdmin = formattedRole.toUpperCase() === "ADMIN";
+
+  const [viewMode, setViewMode] = useState("my"); // "my" or "admin"
+  const [adminConnectionsList, setAdminConnectionsList] = useState([]);
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [selectedDetailsConn, setSelectedDetailsConn] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -81,11 +93,18 @@ export const Connections = () => {
 
     setIsTesting(true);
     try {
-      await testConnection(formData);
-      setTestSuccess(true);
-      setIsTestPassed(true); // Enables the Save Connection button!
+      const res = await testConnection(formData);
+      if (res && (res.success === false || res.data?.success === false)) {
+        setTestError(res.message || res.data?.message || "JDBC Connection test failed. Check host, port, username, and password.");
+        setTestSuccess(false);
+        setIsTestPassed(false);
+      } else {
+        setTestSuccess(true);
+        setIsTestPassed(true); // Enables the Save Connection button!
+      }
     } catch (err) {
       setTestError(err.message || "Database connection test failed. Verify host, port, and credentials.");
+      setTestSuccess(false);
       setIsTestPassed(false);
     } finally {
       setIsTesting(false);
@@ -129,6 +148,17 @@ export const Connections = () => {
     setShowAddForm(true);
   };
 
+  // Fetch admin connections if admin view mode is active
+  useEffect(() => {
+    if (viewMode === "admin" && isAdmin) {
+      setIsAdminLoading(true);
+      fetchAdminConnections()
+        .then((list) => setAdminConnectionsList(list || []))
+        .catch(() => setAdminConnectionsList(connections))
+        .finally(() => setIsAdminLoading(false));
+    }
+  }, [viewMode, isAdmin, fetchAdminConnections, connections]);
+
   // Handle Refresh Schema
   const handleRefreshSchema = (id) => {
     setRefreshingId(id);
@@ -137,62 +167,100 @@ export const Connections = () => {
     }, 1000);
   };
 
+  const displayedConnections = viewMode === "admin" && isAdmin ? adminConnectionsList : connections;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12">
-      {/* Page Header */}
+      {/* Page Header & Admin Filter Tabs */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Database Catalogs
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Configure external MySQL, PostgreSQL, and Oracle database connections securely.
+            Configure external MySQL database connections securely.
           </p>
         </div>
 
-        <Button
-          variant={showAddForm ? "secondary" : "primary"}
-          icon={showAddForm ? X : Plus}
-          onClick={() => {
-            if (showAddForm) {
-              resetForm();
-            } else {
-              setShowAddForm(true);
-            }
-          }}
-          className="rounded-xl px-5 py-2.5 shadow-md transition-all cursor-pointer font-bold text-xs"
-        >
-          {showAddForm ? "Close Form" : "Add Connection"}
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Admin Mode Toggle Tabs */}
+          {isAdmin && (
+            <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setViewMode("my")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === "my"
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                My Connections
+              </button>
+              <button
+                onClick={() => setViewMode("admin")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  viewMode === "admin"
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <Shield size={13} />
+                <span>All Connections (Admin)</span>
+              </button>
+            </div>
+          )}
+
+          <Button
+            variant={showAddForm ? "secondary" : "primary"}
+            icon={showAddForm ? X : Plus}
+            onClick={() => {
+              if (showAddForm) {
+                resetForm();
+              } else {
+                setShowAddForm(true);
+              }
+            }}
+            className="rounded-xl px-5 py-2.5 shadow-md transition-all cursor-pointer font-bold text-xs"
+          >
+            {showAddForm ? "Close Form" : "Add Connection"}
+          </Button>
+        </div>
       </div>
 
       {/* Main Grid: Catalogs List + Add/Edit Form Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 transition-all duration-300">
         {/* Catalogs List Section */}
         <div className={`${showAddForm ? "lg:col-span-7" : "lg:col-span-12"} space-y-4 transition-all duration-300`}>
-          {connections.length === 0 ? (
+          {displayedConnections.length === 0 ? (
             <Card glass={false} className="p-8 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3">
               <Database size={36} className="mx-auto text-slate-400" />
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">No Database Connections Found</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {viewMode === "admin" ? "No Connections Registered System-wide" : "No Database Connections Found"}
+              </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Add your external database credentials to start asking natural language SQL questions.
+                {viewMode === "admin"
+                  ? "No user database connections have been registered across the system yet."
+                  : "Add your external database credentials to start asking natural language SQL questions."}
               </p>
-              <Button
-                variant="primary"
-                onClick={() => setShowAddForm(true)}
-                className="mt-2 text-xs font-bold px-4 py-2 rounded-xl"
-              >
-                + Add First Connection
-              </Button>
+              {viewMode !== "admin" && (
+                <Button
+                  variant="primary"
+                  onClick={() => setShowAddForm(true)}
+                  className="mt-2 text-xs font-bold px-4 py-2 rounded-xl"
+                >
+                  + Add First Connection
+                </Button>
+              )}
             </Card>
           ) : (
             <div className={`grid grid-cols-1 ${showAddForm ? "sm:grid-cols-1 xl:grid-cols-2" : "sm:grid-cols-2"} gap-6`}>
-              {connections.map((cat) => {
+              {displayedConnections.map((cat) => {
                 const isActive = Number(cat.id) === Number(selectedConnectionId);
                 const displayName = cat.connectionName || cat.name || cat.databaseName;
                 const dbType = (cat.databaseType || cat.type || "MYSQL").toUpperCase();
                 const hostPort = cat.host?.includes(":") ? cat.host : `${cat.host || "localhost"}:${cat.port || 3306}`;
                 const dbName = cat.databaseName || cat.dbName || "database";
+                const ownerInfo = cat.userFullName || cat.userEmail || (cat.userId ? `User #${cat.userId}` : null);
 
                 return (
                   <Card
@@ -205,8 +273,8 @@ export const Connections = () => {
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800/60 rounded-md">
                             {dbType}
                           </span>
@@ -216,35 +284,54 @@ export const Connections = () => {
                               ACTIVE TARGET
                             </span>
                           )}
+                          {viewMode === "admin" && ownerInfo && (
+                            <span className="px-2.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-md flex items-center gap-1">
+                              <UserCheck size={11} />
+                              Owner: {ownerInfo}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Action Icons */}
+                        {/* Action Icons: In Admin Mode show ONLY View Details; in Personal Mode show Set Active, Edit, Delete */}
                         <div className="flex items-center gap-1 text-slate-400">
-                          <button
-                            onClick={() => setSelectedConnectionId(cat.id)}
-                            title={isActive ? "Active Catalog" : "Set Active Catalog"}
-                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                              isActive
-                                ? "bg-blue-600 text-white"
-                                : "bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-                            }`}
-                          >
-                            <Eye size={15} />
-                          </button>
-                          <button
-                            onClick={() => handleEditClick(cat)}
-                            title="Configure Settings"
-                            className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                          >
-                            <Settings size={15} />
-                          </button>
-                          <button
-                            onClick={() => deleteConnection(cat.id)}
-                            title="Delete Connection"
-                            className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          {viewMode === "admin" ? (
+                            <button
+                              onClick={() => setSelectedDetailsConn(cat)}
+                              title="View Connection & User Details"
+                              className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-all font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-blue-200/80 dark:border-blue-800/80 shadow-2xs"
+                            >
+                              <Eye size={14} />
+                              <span>View Details</span>
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setSelectedConnectionId(cat.id)}
+                                title={isActive ? "Active Catalog" : "Set Active Catalog"}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  isActive
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                }`}
+                              >
+                                <Eye size={15} />
+                              </button>
+                              <button
+                                onClick={() => handleEditClick(cat)}
+                                title="Configure Settings"
+                                className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              >
+                                <Settings size={15} />
+                              </button>
+                              <button
+                                onClick={() => deleteConnection(cat.id)}
+                                title="Delete Connection"
+                                className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 transition-colors cursor-pointer"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -455,6 +542,128 @@ export const Connections = () => {
           </Card>
         )}
       </div>
+
+      {/* Admin View Details Modal */}
+      {selectedDetailsConn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-150 relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Shield className="text-blue-600 dark:text-blue-400" size={20} />
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                  Connection & Owner Details
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedDetailsConn(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* User Owner Info */}
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 p-4 rounded-2xl space-y-2">
+              <p className="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <UserCheck size={14} />
+                Registered Owner Information
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Owner Name</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {selectedDetailsConn.userFullName || "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Owner Email</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                    {selectedDetailsConn.userEmail || "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">User ID</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                    #{selectedDetailsConn.userId || selectedDetailsConn.id}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Role</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400 uppercase">
+                    {(
+                      selectedDetailsConn.userRole ||
+                      selectedDetailsConn.role ||
+                      (selectedDetailsConn.userEmail === user?.email ? formattedRole : "USER")
+                    ).replace("ROLE_", "")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Database Technical Parameters */}
+            <div className="space-y-3">
+              <p className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Database size={14} className="text-blue-500" />
+                Database Engine Parameters
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 font-mono">
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase font-sans">Connection Name</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white font-sans text-sm">
+                    {selectedDetailsConn.connectionName || selectedDetailsConn.name || "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase font-sans">Engine Type</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400 uppercase font-sans">
+                    {selectedDetailsConn.databaseType || "MYSQL"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase font-sans">Host / Server IP</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                    {selectedDetailsConn.host || "localhost"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase font-sans">Port</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                    {selectedDetailsConn.port || 3306}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase font-sans">Database Name</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                    {selectedDetailsConn.databaseName || "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase font-sans">Username</span>
+                  <span className="font-medium text-slate-800 dark:text-slate-200">
+                    {selectedDetailsConn.username || "N/A"}
+                  </span>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase font-sans">Password Security</span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md">
+                    •••••••• (Encrypted in DB)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedDetailsConn(null)}
+                className="px-5 py-2 text-xs font-bold rounded-xl cursor-pointer"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

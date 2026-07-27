@@ -80,6 +80,14 @@ export const connectionService = {
     const response = await api.delete(`/connections/${id}`);
     return response.data;
   },
+
+  /**
+   * Fetch all database connections across all users for Admin (GET /api/connections/admin/all).
+   */
+  async getAdminConnections() {
+    const response = await api.get("/connections/admin/all");
+    return response.data;
+  },
 };
 
 export default connectionService;

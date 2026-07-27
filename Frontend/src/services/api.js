@@ -24,19 +24,15 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Handle Global 401 Unauthorized Response
+// Response Interceptor: Handle Global 401 Unauthorized & 403 Forbidden Responses
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login if session expired or unauthorized
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-
-      if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
-        window.location.href = "/login?expired=true";
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      // If token exists but server returns 401/403, token is expired or invalid
+      if (token && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        console.warn("Session expired or token invalid. Status:", error.response.status);
       }
     }
     return Promise.reject(error);

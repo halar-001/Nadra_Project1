@@ -13,10 +13,12 @@ import {
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import { useConnection } from "../context/ConnectionContext";
 
 export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
   const { user, logout } = useAuth();
   const { activeConnection } = useChat();
+  const { connections, selectedConnectionId, setSelectedConnectionId } = useConnection();
   const navigate = useNavigate();
   const location = useLocation();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -77,12 +79,21 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
       <div className="p-4 border-b border-slate-100 dark:border-slate-800/80">
         <div className="relative flex items-center">
           <select
+            value={selectedConnectionId || ""}
+            onChange={(e) => setSelectedConnectionId(Number(e.target.value))}
             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2.5 px-3 pr-8 text-sm font-extrabold text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
-            defaultValue={activeConnection?.id || "HalarDB"}
           >
-            <option value="HalarDB" className="dark:bg-slate-900">HalarDB</option>
-            <option value="StudentDB" className="dark:bg-slate-900">StudentDB</option>
-            <option value="Production_MySQL" className="dark:bg-slate-900">Production_MySQL</option>
+            {connections && connections.length > 0 ? (
+              connections.map((conn) => (
+                <option key={conn.id} value={conn.id} className="dark:bg-slate-900 font-semibold">
+                  {conn.connectionName} ({conn.databaseType || "DB"})
+                </option>
+              ))
+            ) : (
+              <option value="" disabled className="dark:bg-slate-900">
+                No Connections Available
+              </option>
+            )}
           </select>
           <ChevronDown size={16} className="absolute right-3 text-slate-500 pointer-events-none" />
         </div>
