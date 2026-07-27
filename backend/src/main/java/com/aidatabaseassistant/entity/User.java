@@ -1,7 +1,6 @@
 package com.aidatabaseassistant.entity;
 
 import jakarta.persistence.*;
-import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -40,10 +39,13 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<DatabaseConnection> databaseConnections = new HashSet<>();
+
     public User() {
     }
 
-    public User(Long id, String fullName, String email, String password, boolean enabled, LocalDateTime createdAt, Set<Role> roles) {
+    public User(Long id, String fullName, String email, String password, boolean enabled, LocalDateTime createdAt, Set<Role> roles, Set<DatabaseConnection> databaseConnections) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
@@ -51,6 +53,9 @@ public class User {
         this.enabled = enabled;
         this.createdAt = createdAt;
         this.roles = roles;
+        if (databaseConnections != null) {
+            this.databaseConnections = databaseConnections;
+        }
     }
 
     public Long getId() {
@@ -109,6 +114,14 @@ public class User {
         this.roles = roles;
     }
 
+    public Set<DatabaseConnection> getDatabaseConnections() {
+        return databaseConnections;
+    }
+
+    public void setDatabaseConnections(Set<DatabaseConnection> databaseConnections) {
+        this.databaseConnections = databaseConnections;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -121,6 +134,7 @@ public class User {
         private boolean enabled = true;
         private LocalDateTime createdAt;
         private Set<Role> roles = new HashSet<>();
+        private Set<DatabaseConnection> databaseConnections = new HashSet<>();
 
         public Builder id(Long id) {
             this.id = id;
@@ -157,8 +171,13 @@ public class User {
             return this;
         }
 
+        public Builder databaseConnections(Set<DatabaseConnection> databaseConnections) {
+            this.databaseConnections = databaseConnections;
+            return this;
+        }
+
         public User build() {
-            return new User(id, fullName, email, password, enabled, createdAt, roles);
+            return new User(id, fullName, email, password, enabled, createdAt, roles, databaseConnections);
         }
     }
 }

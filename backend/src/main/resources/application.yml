@@ -2,10 +2,10 @@ spring:
   application:
     name: ai-database-assistant
   datasource:
-    url: ${DB_URL:jdbc:h2:mem:testdb}
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:sa}
-    driver-class-name: org.h2.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ai_db_assistant?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:YourMySQLPassword}
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,6 +13,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: ${DB_DIALECT:org.hibernate.dialect.MySQLDialect}
   h2:
     console:
       enabled: true
@@ -33,6 +34,8 @@ security:
   jwt:
     secret: ${JWT_SECRET:thisisaverysecuresecretkeyforjwtauthenticationthatisverylong12345}
     expiration: 86400000 # 24 hours
+  encryption:
+    secret: ${ENCRYPTION_SECRET:aidatabaseassistantsupersecureencryptionsecretkey256bitval1234567890}
 
 gemini:
   api:
