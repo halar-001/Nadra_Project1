@@ -1,153 +1,248 @@
 import React, { useState } from "react";
 import { useChat } from "../context/ChatContext";
-import { CheckCircle, Clock, Send, Database, Sparkles } from "lucide-react";
+import { useConnection } from "../context/ConnectionContext";
+import {
+  CheckCircle2,
+  Clock,
+  Send,
+  Sparkles,
+  Table as TableIcon,
+  BarChart2,
+  Download,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 
 export const Chat = () => {
-  const { messages, addMessage, activeConnection } = useChat();
+  const { messages, addMessage } = useChat();
+  const { selectedConnectionId } = useConnection();
+
   const [inputQuery, setInputQuery] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeView, setActiveView] = useState("table");
 
   const handleSend = (e) => {
     e.preventDefault();
     if (!inputQuery.trim()) return;
 
     const userPrompt = inputQuery;
+    const currentConnectionId = selectedConnectionId;
+
     setInputQuery("");
-    addMessage({ sender: "USER", content: userPrompt });
+    addMessage({
+      sender: "USER",
+      content: userPrompt,
+      connectionId: currentConnectionId,
+    });
 
     setIsGenerating(true);
+
     setTimeout(() => {
       addMessage({
         sender: "AI",
-        content: `Extracted SQL query and results based on your prompt: "${userPrompt}"`,
-        sqlQuery: `SELECT username, email, role, created_at FROM users WHERE role = 'ADMIN' ORDER BY id DESC LIMIT 5;`,
+        content: `Retrieves all student records matching prompt "${userPrompt}".`,
+        sqlQuery: `SELECT * FROM students WHERE FirstName = 'Ali'`,
         queryResults: [
-          { id: 1, username: "admin", email: "admin@aidatabaseassistant.com", role: "ADMIN", created_at: "2026-07-21" },
-          { id: 2, username: "sarah_admin", email: "sarah@aidatabaseassistant.com", role: "ADMIN", created_at: "2026-07-20" },
+          { StudentID: 14, RegistrationNo: "2023-BSSE-014", FirstName: "Ali", LastName: "Sheikh", Gender: "Male", DateOfBirth: "2004-01-27", CNIC: "35147-3505969-6", Email: "ali.sheikh@example.com" },
+          { StudentID: 22, RegistrationNo: "2023-BSDS-022", FirstName: "Ali", LastName: "Ahmed", Gender: "Male", DateOfBirth: "2001-11-18", CNIC: "35872-4339787-5", Email: "ali.ahmed@example.com" },
+          { StudentID: 25, RegistrationNo: "2021-BSCS-025", FirstName: "Ali", LastName: "Sheikh", Gender: "Male", DateOfBirth: "2002-11-21", CNIC: "35622-7204716-2", Email: "ali.sheikh2@example.com" },
+          { StudentID: 56, RegistrationNo: "2025-BSSE-056", FirstName: "Ali", LastName: "Ahmed", Gender: "Male", DateOfBirth: "2005-03-05", CNIC: "35208-4322151-4", Email: "ali.ahmed2@example.com" },
+          { StudentID: 57, RegistrationNo: "2024-BSSE-057", FirstName: "Ali", LastName: "Qureshi", Gender: "Male", DateOfBirth: "2004-10-08", CNIC: "35430-6420599-5", Email: "ali.qureshi@example.com" },
+          { StudentID: 77, RegistrationNo: "2023-BSCS-077", FirstName: "Ali", LastName: "Butt", Gender: "Male", DateOfBirth: "2001-10-17", CNIC: "35414-4502204-3", Email: "ali.butt@example.com" },
+          { StudentID: 80, RegistrationNo: "2021-BSSE-080", FirstName: "Ali", LastName: "Siddiqui", Gender: "Male", DateOfBirth: "2001-08-04", CNIC: "35267-9533222-2", Email: "ali.siddiqui@example.com" },
+          { StudentID: 84, RegistrationNo: "2024-BSAI-084", FirstName: "Ali", LastName: "Iqbal", Gender: "Male", DateOfBirth: "2004-12-02", CNIC: "35300-6958405-6", Email: "ali.iqbal@example.com" },
         ],
-        latency: "142 ms",
+        latency: "28576 ms",
+        summary: "Retrieves all student records where the first name is 'Ali'.",
       });
       setIsGenerating(false);
     }, 800);
   };
 
-  return (
-    <div className="h-[calc(100vh-6.5rem)] flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs transition-colors">
-      {/* Header */}
-      <div className="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 rounded-xl">
-            <Database size={20} />
-          </div>
-          <div>
-            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Neural SQL Chat Console</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-              Target Catalog: <strong className="text-blue-600 dark:text-blue-400">{activeConnection?.name || "Internal MySQL DB"}</strong> ({activeConnection?.databaseName || "ai_db_assistant"})
-            </p>
-          </div>
-        </div>
-      </div>
+  const handleExport = (format, data) => {
+    alert(`Exporting ${data.length} records as ${format.toUpperCase()}...`);
+  };
 
-      {/* Messages Feed */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-6">
+  return (
+    <div className="h-full w-full flex flex-col bg-transparent overflow-hidden transition-colors">
+      
+      {/* 1. Messages Viewport (Full-Bleed Canvas) */}
+      <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 w-full">
         {messages.map((m) => (
-          <div key={m.id}>
-            {m.sender === "USER" ? (
-              /* User Prompt Bubble */
-              <div className="flex justify-end">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3.5 max-w-[85%] 2xl:max-w-3xl text-sm sm:text-base font-semibold leading-relaxed shadow-md shadow-blue-500/20">
+          <div key={m.id} className="space-y-6 w-full max-w-7xl mx-auto">
+            
+            {/* USER MESSAGE BUBBLE */}
+            {m.sender === "USER" && (
+              <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="max-w-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white px-5 py-3 rounded-2xl rounded-tr-none text-sm font-medium shadow-md shadow-blue-500/15">
                   {m.content}
                 </div>
               </div>
-            ) : (
-              /* AI Response Card Bubble */
-              <div className="flex justify-start w-full">
-                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl rounded-tl-none p-6 w-full text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 space-y-5 shadow-2xs">
-                  {/* Data Table */}
+            )}
+
+            {/* AI RESPONSE CARD CONTAINER */}
+            {m.sender === "AI" && (
+              <div className="w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-md shadow-slate-200/30 dark:shadow-none space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-300">
+                
+                {/* RECOMMENDED SQL QUERY HEADER */}
+                {m.sqlQuery && (
+                  <div className="space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 font-extrabold text-[11px] tracking-wider uppercase shadow-2xs">
+                      <CheckCircle2 size={15} />
+                      <span>RECOMMENDED SQL QUERY</span>
+                    </div>
+
+                    <div className="p-4 bg-slate-950 text-emerald-400 rounded-2xl font-mono text-xs border border-slate-800 shadow-inner select-all leading-relaxed overflow-x-auto">
+                      <code>{m.sqlQuery}</code>
+                    </div>
+                  </div>
+                )}
+
+                {/* TOOLBAR */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4 pt-2">
+                  
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-800/80 p-1.5 rounded-xl shadow-inner">
+                    <button
+                      onClick={() => setActiveView("table")}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        activeView === "table"
+                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/80 dark:border-slate-600"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <TableIcon size={14} />
+                      <span>Results Table</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveView("chart")}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        activeView === "chart"
+                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs border border-slate-200/80 dark:border-slate-600"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <BarChart2 size={14} />
+                      <span>Visual Chart</span>
+                    </button>
+                  </div>
+
                   {m.queryResults && (
-                    <div className="overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs max-h-72">
-                      <table className="w-full text-left border-collapse text-sm">
-                        <thead>
-                          <tr className="bg-slate-100/90 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
-                            {Object.keys(m.queryResults[0] || {}).map((col) => (
-                              <th key={col} className="p-3.5 font-bold text-slate-800 dark:text-slate-200 font-mono capitalize text-sm">
-                                {col}
-                              </th>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-slate-400 font-semibold mr-1 text-[11px]">Export Results:</span>
+                      <button
+                        onClick={() => handleExport("csv", m.queryResults)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold text-[11px] hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                      >
+                        <Download size={13} />
+                        <span>CSV</span>
+                      </button>
+                      <button
+                        onClick={() => handleExport("excel", m.queryResults)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold text-[11px] hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                      >
+                        <FileSpreadsheet size={13} />
+                        <span>Excel</span>
+                      </button>
+                      <button
+                        onClick={() => handleExport("pdf", m.queryResults)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold text-[11px] hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                      >
+                        <FileText size={13} />
+                        <span>PDF</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* RESULTS TABLE */}
+                {activeView === "table" && m.queryResults && (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800 w-full shadow-2xs">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+                        <tr>
+                          {Object.keys(m.queryResults[0]).map((col) => (
+                            <th key={col} className="p-3.5 uppercase text-[11px] tracking-wide">
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
+                        {m.queryResults.map((row, rowIdx) => (
+                          <tr key={rowIdx} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/50 transition-colors">
+                            {Object.values(row).map((val, cellIdx) => (
+                              <td key={cellIdx} className="p-3.5 text-slate-700 dark:text-slate-300 font-medium">
+                                {String(val)}
+                              </td>
                             ))}
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {m.queryResults.map((row, i) => (
-                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                              {Object.values(row).map((val, j) => (
-                                <td key={j} className="p-3.5 font-mono text-slate-700 dark:text-slate-300 text-sm">
-                                  {String(val)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Natural Language Explanation */}
-                  <div className="text-slate-800 dark:text-slate-200 leading-relaxed text-sm sm:text-base font-medium whitespace-pre-line">
-                    {m.content}
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                )}
 
-                  {/* Recommended SQL Code Block */}
-                  {m.sqlQuery && (
-                    <div className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-5 space-y-2.5">
-                      <div className="flex justify-between items-center text-xs font-bold text-blue-600 dark:text-blue-400">
-                        <span className="flex items-center gap-1.5 uppercase tracking-wider">
-                          <CheckCircle size={15} className="text-emerald-500" />
-                          RECOMMENDED SQL QUERY
-                        </span>
-                      </div>
-                      <pre className="text-sm font-mono text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-950 p-4 rounded-xl overflow-x-auto leading-relaxed border border-slate-200/60 dark:border-slate-800">
-                        {m.sqlQuery}
-                      </pre>
-                    </div>
-                  )}
+                {activeView === "chart" && m.queryResults && (
+                  <div className="p-8 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl text-center space-y-3">
+                    <BarChart2 size={36} className="mx-auto text-blue-600 dark:text-blue-400" />
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Visual Telemetry Chart</h4>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Displaying distribution analytics for {m.queryResults.length} records.
+                    </p>
+                  </div>
+                )}
 
-                  {/* Response Latency Tag */}
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-mono pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-1.5 font-medium">
-                    <Clock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span>AI Translation & Latency: <strong className="text-emerald-600 dark:text-emerald-400">{m.latency || "142 ms"}</strong></span>
+                {/* SUMMARY & LATENCY FOOTER */}
+                <div className="pt-2 space-y-3 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                  <p className="text-slate-600 dark:text-slate-300 font-medium">
+                    {m.summary || m.content}
+                  </p>
+
+                  <div className="flex items-center gap-2 text-xs font-mono">
+                    <Clock size={15} className="text-emerald-500 shrink-0" />
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">AI Translation & Latency:</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{m.latency || "28576 ms"}</strong>
                   </div>
                 </div>
+
               </div>
             )}
           </div>
         ))}
 
         {isGenerating && (
-          <div className="flex justify-start">
-            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2.5 animate-pulse border border-slate-200 dark:border-slate-700">
-              <Sparkles size={18} />
-              <span>Translating natural language prompt into optimized SQL...</span>
+          <div className="flex items-center gap-3 text-slate-400 text-xs font-medium animate-pulse p-2 max-w-7xl mx-auto">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-500 flex items-center justify-center shrink-0">
+              <Sparkles size={16} className="animate-spin" />
             </div>
+            <span>Translating prompt to SQL query and fetching target database records...</span>
           </div>
         )}
       </div>
 
-      {/* Input Console */}
-      <form onSubmit={handleSend} className="p-4 sm:p-5 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-3">
-        <input
-          type="text"
-          value={inputQuery}
-          onChange={(e) => setInputQuery(e.target.value)}
-          placeholder="Ask a question in plain English e.g., 'Show top 5 customers by revenue in 2026'"
-          className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm sm:text-base font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
-        <button
-          type="submit"
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-md hover:from-blue-500 hover:to-indigo-500 transition-all cursor-pointer"
-        >
-          <Send size={16} />
-          <span>Execute</span>
-        </button>
+      {/* 2. Bottom Pill Input Bar */}
+      <form onSubmit={handleSend} className="p-4 sm:px-6 bg-transparent w-full shrink-0">
+        <div className="relative flex items-center max-w-7xl mx-auto w-full">
+          <input
+            type="text"
+            value={inputQuery}
+            onChange={(e) => setInputQuery(e.target.value)}
+            placeholder="e.g. Show top 5 users sorted by email"
+            className="w-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-full py-4 pl-6 pr-16 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-500 transition-all shadow-md shadow-slate-200/40 dark:shadow-none"
+          />
+          <button
+            type="submit"
+            disabled={!inputQuery.trim() || isGenerating}
+            className={`absolute right-3 p-3 rounded-full transition-all cursor-pointer flex items-center justify-center shadow-md ${
+              inputQuery.trim() && !isGenerating
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/20 hover:scale-105"
+                : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+            }`}
+          >
+            <Send size={15} />
+          </button>
+        </div>
       </form>
     </div>
   );
