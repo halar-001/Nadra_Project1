@@ -34,7 +34,10 @@ public class ConnectionService {
         try {
             DriverManager.setLoginTimeout(5); // 5-second timeout for testing
             try (Connection conn = DriverManager.getConnection(url, request.getUsername(), request.getPassword())) {
-                return TestConnectionResponse.ok();
+                if (conn.isValid(2)) {
+                    return TestConnectionResponse.ok();
+                }
+                return TestConnectionResponse.fail("Connection opened but failed validity test.");
             }
         } catch (SQLException e) {
             return TestConnectionResponse.fail("Connection failed: " + e.getMessage());
@@ -45,6 +48,12 @@ public class ConnectionService {
         User user = getUserByEmail(userEmail);
         return connectionRepository.findByUserId(user.getId()).stream()
                 .map(ConnectionResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    public List<AdminConnectionResponse> getAllConnectionsForAdmin() {
+        return connectionRepository.findAll().stream()
+                .map(AdminConnectionResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 

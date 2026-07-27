@@ -1,5 +1,6 @@
 package com.aidatabaseassistant.service;
 
+import com.aidatabaseassistant.dto.AdminConnectionResponse;
 import com.aidatabaseassistant.dto.ConnectionResponse;
 import com.aidatabaseassistant.dto.CreateConnectionRequest;
 import com.aidatabaseassistant.dto.TestConnectionRequest;
@@ -105,6 +106,17 @@ public class ConnectionManagementIntegrationTest {
         );
         ConnectionResponse updated = connectionService.updateConnection(ADMIN_1, created.getId(), updateReq);
         Assertions.assertEquals("Updated MySQL DB", updated.getConnectionName());
+
+        // 5.b Verify Admin Overview Feature (getAllConnectionsForAdmin) maps owner details
+        List<AdminConnectionResponse> allAdminConns = connectionService.getAllConnectionsForAdmin();
+        Assertions.assertFalse(allAdminConns.isEmpty());
+        AdminConnectionResponse adminView = allAdminConns.stream()
+                .filter(c -> c.getId().equals(created.getId()))
+                .findFirst().orElseThrow();
+        Assertions.assertEquals("Updated MySQL DB", adminView.getConnectionName());
+        Assertions.assertEquals(ADMIN_1, adminView.getUserEmail());
+        Assertions.assertNotNull(adminView.getUserId());
+        Assertions.assertNotNull(adminView.getUserFullName());
 
         // 6. Verify Tenant Isolation on Deletion: Admin 2 cannot delete Admin 1's connection!
         Assertions.assertThrows(RuntimeException.class, () -> {
