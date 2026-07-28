@@ -1,31 +1,32 @@
-# Phase 2 - Day 2 Implementation Details
+# Phase 2: User Authentication & Security Infrastructure
+## Day 2 Implementation: Stateless Security Architecture, JWT Engine & Exception Governance
 
-## Objective
-Implement complete business logic for the Authentication system, integrate with the frontend, and rigorously test end-to-end functionality.
+---
 
-## Implemented Features
+### 1. Daily Objectives
+On Day 2 of Phase 2, the team focused on constructing the stateless security pipeline, building token authentication infrastructure, and establishing global exception governance. The objective was to eliminate session reliance, enforce cryptographic password hashing, deploy JSON Web Token (JWT) verification filters, and ensure consistent API error responses across the platform.
 
-### 1. Authentication Service & Controllers
-- **`AuthService`**: Encapsulated the core business logic.
-  - **Registration**: Allows users to register. Users are assigned the `ROLE_VIEWER` by default and are created in a disabled state pending email verification. A secure 6-digit OTP is generated.
-  - **OTP Verification**: Endpoint to verify the OTP. If valid, the user account is enabled. Checks for OTP expiration (10-minute window) and invalid OTPs.
-  - **Login**: Verifies credentials using Spring's `AuthenticationManager`. Checks if the account is `enabled`. Generates a JWT token upon success and formats a rich `LoginResponse` payload (including roles).
-- **`AuthController`**: Created REST endpoints (`/api/auth/register`, `/api/auth/verify-otp`, `/api/auth/login`) mapped to the `AuthService` methods with proper validation (`@Valid`).
+---
 
-### 2. Supporting Services
-- **`EmailService`**: Implemented an email service mechanism designed to securely transmit the OTP to the user's provided email address during registration.
+### 2. Key Accomplishments
 
-### 3. Application Bootstrapping
-- **`DataInitializer`**: Leveraged a `CommandLineRunner` to automatically seed the database on startup.
-  - Pre-seeded the core roles: `ROLE_ADMIN`, `ROLE_USER`, `ROLE_VIEWER`.
-  - Automatically provisions two Developer Admin accounts (`taimoorajmal00@gmail.com`, `halarkhan00000@gmail.com`) for testing and immediate console access.
+#### A. JWT Token Engineering & Cryptographic Signing
+- **Token Ecosystem ([JwtService.java](file:///d:/ALL%20DATA/PROJECTS/NADRA_PROJECT/Nadra_Project1/backend/src/main/java/com/aidatabaseassistant/security/JwtService.java))**: Designed a standardized JWT token generator utilizing `io.jsonwebtoken` (JJWT) powered by HMAC SHA-256 digital signing. Tokens encode subject identification (`sub`), user IDs, and assigned role claims directly within the encrypted payload, complete with explicit expiration enforcement (24-hour validity window).
+- **Stateless Interceptor Filter ([JwtAuthenticationFilter.java](file:///d:/ALL%20DATA/PROJECTS/NADRA_PROJECT/Nadra_Project1/backend/src/main/java/com/aidatabaseassistant/security/JwtAuthenticationFilter.java))**: Engineered a specialized `OncePerRequestFilter` designed to intercept every inbound HTTP API request. It parses `Bearer` tokens from the `Authorization` header, mathematically verifies token integrity against secret signing keys, extracts user claims, and directly populates Spring's `SecurityContextHolder` without touching server session memory.
 
-### 4. Cross-Origin Resource Sharing (CORS)
-- **`CorsConfig`**: Configured global CORS policies to allow seamless communication from the React frontend (running on Vite's default dev server ports) to the Spring Boot backend, allowing credentials and the `Authorization` header.
+#### B. Global Security Hardening & Password Ciphering
+- **BCrypt Integration**: Integrated Spring Security's `BCryptPasswordEncoder` bean into the core pipeline, guaranteeing zero plain-text storage of passwords anywhere within application logic or databases.
+- **Stateless Security Pipeline ([SecurityConfig.java](file:///d:/ALL%20DATA/PROJECTS/NADRA_PROJECT/Nadra_Project1/backend/src/main/java/com/aidatabaseassistant/config/SecurityConfig.java))**: Configured global `SecurityFilterChain` architecture:
+  - Explicitly disabled CSRF protection to optimize for stateless REST API consumers.
+  - Enforced `SessionCreationPolicy.STATELESS`, completely decoupling backend scaling from persistent session memory.
+  - Configured precise route access corridors: unlocked public access exclusively for login (`/api/auth/login`), account registration (`/api/auth/register`), system diagnostics (`/api/health`), and OpenAPI/Swagger documentation, while locking all remaining endpoints behind mandatory token authentication.
 
-### 5. Frontend & Backend Integration
-- Successfully synchronized the frontend `Login.jsx` to utilize the pre-seeded admin accounts.
-- **End-to-End Testing**: Conducted rigorous browser-based automated testing. Confirmed successful user registration, H2 database integrity, and correct authentication validation paths (including invalid credentials testing and successful JWT retrieval).
+#### C. Domain Exception Governance
+- **Global API Error Interceptor ([GlobalExceptionHandler.java](file:///d:/ALL%20DATA/PROJECTS/NADRA_PROJECT/Nadra_Project1/backend/src/main/java/com/aidatabaseassistant/exception/GlobalExceptionHandler.java))**: Configured a centralized `@RestControllerAdvice` wrapper to capture authentication failures, validation errors (`@Valid`), duplicate email registration attempts, and general system runtime exceptions.
+- **Uniform JSON Contracts**: Transformed standard default HTML error pages into structured JSON `ApiResponse` objects (`{ status: false, message: "...", data: null }`), preventing unhandled server stack traces from exposing system implementation internals to clients.
 
-## Result
-A fully functional, end-to-end authentication flow is complete, seamlessly connecting the React frontend to the secured Spring Boot backend.
+---
+
+### 3. Verification & Outcome
+- Executed synthetic token simulation confirming invalid, expired, or tampered JWT signatures instantly trigger cleanly formatted HTTP 401 Unauthorized API error payloads.
+- Verified password hashing cycles generate distinct, salted cryptographic digests on every save operation.
