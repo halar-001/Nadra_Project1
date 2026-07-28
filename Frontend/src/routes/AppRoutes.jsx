@@ -5,6 +5,7 @@ import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import Chat from "../pages/Chat";
 import Connections from "../pages/Connections";
+import SchemaExplorer from "../pages/SchemaExplorer";
 import Profile from "../pages/Profile";
 import Admin from "../pages/Admin";
 import NotFound from "../pages/NotFound";
@@ -41,6 +42,14 @@ export const AppRoutes = () => {
             element={
               <ProtectedRoute>
                 <Connections />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schema"
+            element={
+              <ProtectedRoute>
+                <SchemaExplorer />
               </ProtectedRoute>
             }
           />

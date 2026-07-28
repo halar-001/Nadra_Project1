@@ -23,6 +23,8 @@ export const Navbar = ({ onToggleMobileSidebar }) => {
         return { title: "DataPulse Dashboard", subtitle: "System Telemetry & Overview" };
       case "/connections":
         return { title: "Database Catalogs", subtitle: "Manage External Connections" };
+      case "/schema":
+        return { title: "Schema Explorer", subtitle: "Inspect Structure & Metadata Cache" };
       case "/profile":
         return { title: "User Account Profile", subtitle: "Security & Credentials" };
       case "/admin":

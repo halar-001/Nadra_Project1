@@ -4,6 +4,7 @@ import {
   SquarePen,
   LayoutGrid,
   Database,
+  FolderTree,
   ShieldCheck,
   User,
   LogOut,
@@ -39,6 +40,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
     { label: "New chat", path: "/chat", icon: SquarePen },
     { label: "Dashboard", path: "/dashboard", icon: LayoutGrid },
     { label: "Databases", path: "/connections", icon: Database },
+    { label: "Schema Explorer", path: "/schema", icon: FolderTree },
     { label: "System Logs", path: "/admin", icon: ShieldCheck },
   ];
 
@@ -65,7 +67,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-sans border-r border-slate-200/90 dark:border-slate-800 shadow-xs transition-colors">
       {/* Brand Header */}
-      <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
         <Logo size="sm" />
         <button
           onClick={onCloseMobile}
@@ -76,12 +78,12 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
       </div>
 
       {/* Target Database Select Dropdown */}
-      <div className="p-4 border-b border-slate-100 dark:border-slate-800/80">
+      <div className="p-3 border-b border-slate-100 dark:border-slate-800/80">
         <div className="relative flex items-center">
           <select
             value={selectedConnectionId || ""}
             onChange={(e) => setSelectedConnectionId(Number(e.target.value))}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2.5 px-3 pr-8 text-sm font-extrabold text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2 px-3 pr-8 text-xs font-extrabold text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
           >
             {connections && connections.length > 0 ? (
               connections.map((conn) => (
@@ -95,12 +97,12 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
               </option>
             )}
           </select>
-          <ChevronDown size={16} className="absolute right-3 text-slate-500 pointer-events-none" />
+          <ChevronDown size={14} className="absolute right-3 text-slate-500 pointer-events-none" />
         </div>
       </div>
 
       {/* Main Navigation Links */}
-      <div className="px-3 py-4 space-y-1">
+      <div className="px-2.5 py-2.5 space-y-0.5">
         {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -109,22 +111,22 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
               key={item.path}
               to={item.path}
               onClick={onCloseMobile}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
                 isActive
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                   : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <Icon size={18} className="shrink-0" />
+              <Icon size={16} className="shrink-0" />
               <span>{item.label}</span>
             </NavLink>
           );
         })}
       </div>
 
-      {/* Recents Section */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
-        <div className="px-3.5 py-1.5 text-xs font-black text-slate-900 dark:text-slate-300 uppercase tracking-wider">
+      {/* Recents Section (Scrolls smoothly without pushing footer) */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-2 border-t border-slate-100 dark:border-slate-800/80 space-y-0.5">
+        <div className="px-3 py-1 text-[11px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">
           Recents
         </div>
 
@@ -137,7 +139,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                 navigate(rec.path);
                 onCloseMobile();
               }}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors truncate block cursor-pointer ${
+              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors truncate block cursor-pointer ${
                 isSelected
                   ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
@@ -149,20 +151,20 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         })}
       </div>
 
-      {/* User Footer Profile Card & Popup Menu */}
-      <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 relative" ref={menuRef}>
+      {/* User Footer Profile Card & Popup Menu (Pinned at bottom) */}
+      <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 relative shrink-0" ref={menuRef}>
         {/* Floating Menu Popup above User Trigger */}
         {showUserMenu && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-slate-900 p-2 shadow-2xl border border-slate-200 dark:border-slate-800 rounded-2xl z-30 animate-in fade-in slide-in-from-bottom-2 duration-150 space-y-1">
+          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-slate-900 p-2 shadow-2xl border border-slate-200 dark:border-slate-800 rounded-2xl z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 space-y-1">
             <button
               onClick={() => {
                 setShowUserMenu(false);
                 onCloseMobile();
                 navigate("/profile");
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-left cursor-pointer"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-left cursor-pointer"
             >
-              <User size={17} className="text-slate-500" />
+              <User size={16} className="text-slate-500" />
               <span>Profile</span>
             </button>
 
@@ -173,9 +175,9 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                 setShowUserMenu(false);
                 logout();
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors text-left cursor-pointer"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors text-left cursor-pointer"
             >
-              <LogOut size={17} className="text-red-500" />
+              <LogOut size={16} className="text-red-500" />
               <span>Log out</span>
             </button>
           </div>
@@ -184,19 +186,21 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         {/* Profile Card Button */}
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className={`w-full flex items-center justify-between p-2.5 rounded-2xl transition-all text-left cursor-pointer ${
+          className={`w-full flex items-center justify-between p-2 rounded-2xl transition-all text-left cursor-pointer ${
             showUserMenu ? "bg-slate-100 dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
           }`}
+          title="User Account Menu"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-600 to-orange-500 flex items-center justify-center text-white text-sm font-black shadow-xs shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 to-orange-500 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
               {userInitials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-black text-slate-900 dark:text-white truncate">{displayName}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize font-medium">{formattedRole}</p>
+              <p className="text-xs font-black text-slate-900 dark:text-white truncate">{displayName}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate capitalize font-medium">{formattedRole}</p>
             </div>
           </div>
+          <ChevronDown size={14} className={`text-slate-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
         </button>
       </div>
     </div>
