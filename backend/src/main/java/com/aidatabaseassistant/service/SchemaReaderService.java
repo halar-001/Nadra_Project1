@@ -36,18 +36,22 @@ public class SchemaReaderService {
 
         try (Connection jdbcConnection = connectionService.getDynamicJdbcConnection(connectionId, userEmail)) {
             DatabaseMetaData metaData = jdbcConnection.getMetaData();
+            String catalog = jdbcConnection.getCatalog();
+            if (catalog == null || catalog.isBlank()) {
+                catalog = connectionDetails.getDatabaseName();
+            }
 
             // 1. Read Tables and Views
-            readTablesAndViews(metaData, schema);
+            readTablesAndViews(metaData, catalog, schema);
 
             // 2. Read Columns for all Tables
-            readColumns(metaData, schema);
+            readColumns(metaData, catalog, schema);
 
             // 3. Read Primary Keys and Indexes
-            readPrimaryKeysAndIndexes(metaData, schema);
+            readPrimaryKeysAndIndexes(metaData, catalog, schema);
 
             // 4. Read Relationships & Infer Cardinality (ONE_TO_ONE, ONE_TO_MANY, MANY_TO_MANY)
-            readRelationships(metaData, schema);
+            readRelationships(metaData, catalog, schema);
 
         } catch (SQLException e) {
             logger.error("Failed to read schema metadata for connection ID: {}", connectionId, e);
@@ -57,9 +61,9 @@ public class SchemaReaderService {
         return schema;
     }
 
-    private void readTablesAndViews(DatabaseMetaData metaData, DatabaseSchema schema) throws SQLException {
+    private void readTablesAndViews(DatabaseMetaData metaData, String catalog, DatabaseSchema schema) throws SQLException {
         String[] tableTypes = {"TABLE", "VIEW"};
-        try (ResultSet rs = metaData.getTables(null, null, "%", tableTypes)) {
+        try (ResultSet rs = metaData.getTables(catalog, null, "%", tableTypes)) {
             while (rs.next()) {
                 String schemaName = rs.getString("TABLE_SCHEM");
                 String tableName = rs.getString("TABLE_NAME");
@@ -74,9 +78,9 @@ public class SchemaReaderService {
         }
     }
 
-    private void readColumns(DatabaseMetaData metaData, DatabaseSchema schema) throws SQLException {
+    private void readColumns(DatabaseMetaData metaData, String catalog, DatabaseSchema schema) throws SQLException {
         for (TableMetadata table : schema.getTables()) {
-            try (ResultSet rs = metaData.getColumns(null, null, table.getTableName(), "%")) {
+            try (ResultSet rs = metaData.getColumns(catalog, null, table.getTableName(), "%")) {
                 while (rs.next()) {
                     String columnName = rs.getString("COLUMN_NAME");
                     String dataType = rs.getString("TYPE_NAME");
@@ -100,10 +104,10 @@ public class SchemaReaderService {
         }
     }
 
-    private void readPrimaryKeysAndIndexes(DatabaseMetaData metaData, DatabaseSchema schema) throws SQLException {
+    private void readPrimaryKeysAndIndexes(DatabaseMetaData metaData, String catalog, DatabaseSchema schema) throws SQLException {
         for (TableMetadata table : schema.getTables()) {
             // Read Primary Keys
-            try (ResultSet rsPk = metaData.getPrimaryKeys(null, null, table.getTableName())) {
+            try (ResultSet rsPk = metaData.getPrimaryKeys(catalog, null, table.getTableName())) {
                 while (rsPk.next()) {
                     String pkCol = rsPk.getString("COLUMN_NAME");
                     if (pkCol != null) {
@@ -115,7 +119,7 @@ public class SchemaReaderService {
             }
 
             // Read Indexes
-            try (ResultSet rsIdx = metaData.getIndexInfo(null, null, table.getTableName(), false, false)) {
+            try (ResultSet rsIdx = metaData.getIndexInfo(catalog, null, table.getTableName(), false, false)) {
                 while (rsIdx.next()) {
                     String indexName = rsIdx.getString("INDEX_NAME");
                     String columnName = rsIdx.getString("COLUMN_NAME");
@@ -131,7 +135,7 @@ public class SchemaReaderService {
         }
     }
 
-    private void readRelationships(DatabaseMetaData metaData, DatabaseSchema schema) throws SQLException {
+    private void readRelationships(DatabaseMetaData metaData, String catalog, DatabaseSchema schema) throws SQLException {
         List<RelationshipMetadata> directRelationships = new ArrayList<>();
         Map<String, List<RelationshipMetadata>> childTableFkMap = new HashMap<>();
 
@@ -139,7 +143,7 @@ public class SchemaReaderService {
             String tableName = table.getTableName();
             List<RelationshipMetadata> fksInTable = new ArrayList<>();
 
-            try (ResultSet rsFk = metaData.getImportedKeys(null, null, tableName)) {
+            try (ResultSet rsFk = metaData.getImportedKeys(catalog, null, tableName)) {
                 while (rsFk.next()) {
                     String parentTable = rsFk.getString("PKTABLE_NAME");
                     String parentColumn = rsFk.getString("PKCOLUMN_NAME");
