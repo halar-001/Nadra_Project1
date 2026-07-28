@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Eye, Settings, Trash2, RotateCw, CheckCircle2, AlertCircle, Database, Check, UserCheck, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, X, Eye, Settings, Trash2, RotateCw, CheckCircle2, AlertCircle, Database, Check, UserCheck, Shield, FolderTree } from "lucide-react";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import { useConnection } from "../context/ConnectionContext";
 import { useAuth } from "../context/AuthContext";
+import { useSchema } from "../context/SchemaContext";
 
 export const Connections = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { refreshSchema: schemaContextRefresh } = useSchema();
   const {
     connections,
     selectedConnectionId,
@@ -160,11 +164,15 @@ export const Connections = () => {
   }, [viewMode, isAdmin, fetchAdminConnections, connections]);
 
   // Handle Refresh Schema
-  const handleRefreshSchema = (id) => {
+  const handleRefreshSchema = async (id) => {
     setRefreshingId(id);
-    setTimeout(() => {
+    try {
+      await schemaContextRefresh(id);
+    } catch (e) {
+      console.warn("Schema refresh notice:", e?.message);
+    } finally {
       setRefreshingId(null);
-    }, 1000);
+    }
   };
 
   const displayedConnections = viewMode === "admin" && isAdmin ? adminConnectionsList : connections;
@@ -343,15 +351,30 @@ export const Connections = () => {
                       </p>
                     </div>
 
-                    <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+                    <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 font-mono">
                       <span>DB: {dbName}</span>
-                      <button
-                        onClick={() => handleRefreshSchema(cat.id)}
-                        className="text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1.5 font-semibold cursor-pointer"
-                      >
-                        <RotateCw size={13} className={refreshingId === cat.id ? "animate-spin text-blue-600" : ""} />
-                        <span>{refreshingId === cat.id ? "Refreshing..." : "Refresh Schema"}</span>
-                      </button>
+                      {viewMode !== "admin" && (
+                        <div className="flex items-center gap-3 font-sans font-bold">
+                          <button
+                            onClick={() => {
+                              setSelectedConnectionId(cat.id);
+                              navigate(`/schema?connectionId=${cat.id}`);
+                            }}
+                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                            title="Inspect Database Schema & Tables"
+                          >
+                            <FolderTree size={13} />
+                            <span>Inspect Schema</span>
+                          </button>
+                          <button
+                            onClick={() => handleRefreshSchema(cat.id)}
+                            className="text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 cursor-pointer"
+                          >
+                            <RotateCw size={13} className={refreshingId === cat.id ? "animate-spin text-blue-600" : ""} />
+                            <span>{refreshingId === cat.id ? "Refreshing..." : "Refresh"}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </Card>
                 );
