@@ -48,9 +48,20 @@ export const chatService = {
         executionTimeMs: data.executionTimeMs || (Date.now() - startTime),
       };
     } catch (error) {
-      console.warn(`[chatService] API offline or endpoint error. Using local SQL generator fallback.`, error?.message);
+      // If backend returned an HTTP error response (e.g. 500, 400, 404), throw error to display Error Banner
+      if (error.response) {
+        const backendMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.response?.data?.data ||
+          "AI Provider failed to generate SQL. Please check your API keys or internet connection.";
+        throw new Error(backendMessage);
+      }
+
+      // ONLY use offline mock generator if Backend Server is completely disconnected (Network Error / Port 8080 down)
+      console.warn(`[chatService] Backend server disconnected on port 8080. Serving local mock fallback.`, error?.message);
       
-      // Simulate realistic processing latency (600ms - 1100ms)
+      // Simulate realistic processing latency
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       const lowerMsg = message.toLowerCase();
@@ -64,7 +75,7 @@ export const chatService = {
 
       return {
         generatedSql,
-        model: matched?.model || "gemini-1.5-flash (offline fallback)",
+        model: "Offline Mock (Server Disconnected)",
         executionTimeMs: Date.now() - startTime,
       };
     }

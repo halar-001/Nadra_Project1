@@ -15,6 +15,7 @@ import {
   ChevronDown,
   RefreshCw,
   Lightbulb,
+  AlertTriangle,
 } from "lucide-react";
 
 export const Chat = () => {
@@ -147,8 +148,32 @@ export const Chat = () => {
               </div>
             )}
 
-            {/* AI RESPONSE CARD CONTAINER */}
-            {m.sender === "AI" && (
+            {/* AI ERROR RESPONSE CARD */}
+            {m.sender === "AI" && m.isError && (
+              <div className="w-full bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200/90 dark:border-rose-900/60 rounded-3xl p-5 sm:p-6 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-500/20 shrink-0">
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-rose-900 dark:text-rose-200">
+                      AI Provider API Error
+                    </h4>
+                    <p className="text-xs text-rose-700 dark:text-rose-300 font-medium leading-relaxed">
+                      {m.content?.replace(/^⚠️ Error:\s*/, "") || "All AI providers failed to generate SQL. Please check your API keys or internet connection."}
+                    </p>
+                    <div className="pt-2">
+                      <span className="text-[11px] text-rose-600 dark:text-rose-400 font-mono">
+                        Tip: Verify your API keys in application.yml or check your network connection.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* AI SUCCESS RESPONSE CARD CONTAINER */}
+            {m.sender === "AI" && !m.isError && (
               <div className="w-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-md shadow-slate-200/30 dark:shadow-none space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-300">
                 {/* AI Text Summary / Intro */}
                 {m.content && (
