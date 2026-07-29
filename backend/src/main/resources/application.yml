@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/ai_db_assistant?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:YourMySQLPassword}
+    password: ${DB_PASSWORD:}
     driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
   jpa:
     hibernate:
@@ -40,7 +40,8 @@ security:
 gemini:
   api:
     key: ${GEMINI_API_KEY:dummy}
-
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent}
 groq:
   api:
     key: ${GROQ_API_KEY:dummy}
+    url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
