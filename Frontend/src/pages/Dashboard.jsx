@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useConnection } from "../context/ConnectionContext";
+import { useChat } from "../context/ChatContext";
 import {
   Database,
   MessageSquare,
@@ -21,30 +23,46 @@ import Card from "../components/Card";
 
 // Initial Mock Logs Stream
 const INITIAL_LOGS = [
-  { id: 1, timestamp: "11:34:02", level: "INFO", module: "AUTH_SERVICE", message: "JWT token validated for user admin1@aidatabaseassistant.com" },
+  { id: 1, timestamp: "11:34:02", level: "INFO", module: "AUTH_SERVICE", message: "JWT token validated for user" },
   { id: 2, timestamp: "11:34:15", level: "SUCCESS", module: "SQL_PARSER", message: "Natural language query parsed into optimized AST in 4ms" },
-  { id: 3, timestamp: "11:34:16", level: "SUCCESS", module: "EXECUTOR", message: "Executed SELECT on mysql_prod_db (Returned 12 rows in 14ms)" },
-  { id: 4, timestamp: "11:35:01", level: "INFO", module: "CATALOG", message: "Active database pool connection verified for postgres_analytics" },
-  { id: 5, timestamp: "11:36:20", level: "SECURITY", module: "RBAC", message: "Access granted for resource /api/v1/connections (Role: ADMIN)" },
-  { id: 6, timestamp: "11:37:44", level: "WARN", module: "CACHE", message: "Schema Metadata cache hit ratio below threshold (84.2%)" },
-];
-
-const LATENCY_DATA = [
-  { endpoint: "/api/chat/stream", latency: 85, time: "11:30" },
-  { endpoint: "/api/connections", latency: 35, time: "11:31" },
-  { endpoint: "/api/users/me", latency: 20, time: "11:32" },
-  { endpoint: "/api/sql/validate", latency: 15, time: "11:33" },
-  { endpoint: "/api/auth/login", latency: 45, time: "11:34" },
-  { endpoint: "/api/chat/sessions", latency: 28, time: "11:35" },
-  { endpoint: "/api/schema/refresh", latency: 92, time: "11:36" },
-  { endpoint: "/api/health", latency: 8, time: "11:37" },
-  { endpoint: "/api/chat/stream", latency: 74, time: "11:38" },
-  { endpoint: "/api/users/me", latency: 18, time: "11:39" },
+  { id: 3, timestamp: "11:34:16", level: "SUCCESS", module: "EXECUTOR", message: "Executed SELECT on target database catalog (Returned 12 rows in 14ms)" },
+  { id: 4, timestamp: "11:35:01", level: "INFO", module: "CATALOG", message: "Active database pool connection verified for target connection" },
+  { id: 5, timestamp: "11:36:20", level: "SECURITY", module: "RBAC", message: "Access granted for resource /api/v1/connections" },
+  { id: 6, timestamp: "11:37:44", level: "WARN", module: "CACHE", message: "Schema Metadata cache hit ratio verified" },
 ];
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { connections, selectedConnection } = useConnection();
+  const { messages } = useChat();
   const navigate = useNavigate();
+
+  // Dynamic system counts
+  const connectedCount = connections?.length || 0;
+  const activeDbName = selectedConnection?.connectionName || connections[0]?.connectionName || "Local Database";
+  const activeDbType = selectedConnection?.databaseType || connections[0]?.databaseType || "MYSQL";
+  const userQueryCount = messages?.filter((m) => m.sender === "USER")?.length || 0;
+  const aiQueryCount = messages?.filter((m) => m.sender === "AI" && !m.isError)?.length || 0;
+  
+  // Calculate average execution time dynamically
+  const aiMessages = messages?.filter((m) => m.sender === "AI" && m.executionTimeMs);
+  const avgLatencyMs = aiMessages && aiMessages.length > 0
+    ? Math.round(aiMessages.reduce((acc, m) => acc + m.executionTimeMs, 0) / aiMessages.length)
+    : 18;
+
+  // Dynamic Telemetry Latency dataset
+  const dynamicLatencyData = [
+    { endpoint: "/api/chat/stream", latency: avgLatencyMs > 0 ? avgLatencyMs : 85, time: "11:30" },
+    { endpoint: "/api/connections", latency: 35, time: "11:31" },
+    { endpoint: "/api/users/me", latency: 20, time: "11:32" },
+    { endpoint: "/api/sql/validate", latency: 15, time: "11:33" },
+    { endpoint: "/api/auth/login", latency: 45, time: "11:34" },
+    { endpoint: "/api/chat/sessions", latency: 28, time: "11:35" },
+    { endpoint: "/api/schema/refresh", latency: 92, time: "11:36" },
+    { endpoint: "/api/health", latency: 8, time: "11:37" },
+    { endpoint: "/api/chat/stream", latency: avgLatencyMs, time: "11:38" },
+    { endpoint: "/api/users/me", latency: 18, time: "11:39" },
+  ];
 
   // Log Stream State
   const [logs, setLogs] = useState(INITIAL_LOGS);
@@ -148,7 +166,7 @@ export const Dashboard = () => {
               Welcome back, {user?.fullName || user?.username || "Admin"}! 👋
             </h1>
             <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
-              Interact with relational databases using natural language prompts. Monitor telemetry, system logs, and query analytics in real-time.
+              Target Catalog: <strong className="text-blue-600 dark:text-blue-400">{activeDbName}</strong> ({activeDbType}). Monitor telemetry, system logs, and query analytics in real-time.
             </p>
           </div>
 
@@ -164,7 +182,7 @@ export const Dashboard = () => {
         </div>
       </Card>
 
-      {/* 3 Interactive Stat Metric Cards with Sparklines */}
+      {/* 3 Dynamic Stat Metric Cards with Sparklines */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card glass={false} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs relative overflow-hidden group hover:border-blue-500/40 transition-all">
           <div className="flex flex-col justify-between h-full relative z-10">
@@ -174,9 +192,9 @@ export const Dashboard = () => {
                   Connected Catalogs
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">2</h3>
-                  <span className="px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 rounded flex items-center gap-0.5 animate-pulse">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1"></span> Live
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{connectedCount}</h3>
+                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-0.5 ${connectedCount > 0 ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 animate-pulse" : "text-amber-600 bg-amber-50"}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full mr-1 ${connectedCount > 0 ? "bg-emerald-500" : "bg-amber-500"}`}></span> {connectedCount > 0 ? "Live" : "No DB"}
                   </span>
                 </div>
               </div>
@@ -197,12 +215,12 @@ export const Dashboard = () => {
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                  Active Queries (RPS)
+                  User AI Prompts
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">142</h3>
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{userQueryCount}</h3>
                   <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center">
-                    <TrendingUp size={10} className="mr-0.5" /> +12% today
+                    <TrendingUp size={10} className="mr-0.5" /> {aiQueryCount} SQL Generated
                   </span>
                 </div>
               </div>
@@ -224,10 +242,10 @@ export const Dashboard = () => {
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                  Avg Query Latency
+                  Avg Execution Latency
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">14<span className="text-lg text-slate-500 ml-1">ms</span></h3>
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{avgLatencyMs}<span className="text-lg text-slate-500 ml-1">ms</span></h3>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-100 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
@@ -278,13 +296,13 @@ export const Dashboard = () => {
             <div className="relative">
               {activeHoverBar !== null && (
                 <div className="absolute top-0 right-0 bg-slate-950 text-white text-[11px] px-3 py-1.5 rounded-xl border border-slate-800 shadow-lg z-20 animate-in fade-in font-mono">
-                  <span className="text-emerald-400 font-bold">{LATENCY_DATA[activeHoverBar].latency} ms</span>
-                  <span className="text-slate-400 ml-2">({LATENCY_DATA[activeHoverBar].endpoint})</span>
+                  <span className="text-emerald-400 font-bold">{dynamicLatencyData[activeHoverBar].latency} ms</span>
+                  <span className="text-slate-400 ml-2">({dynamicLatencyData[activeHoverBar].endpoint})</span>
                 </div>
               )}
 
               <div className="h-48 w-full pt-8 pb-2 flex items-end justify-between gap-2 border-b border-slate-200 dark:border-slate-800">
-                {LATENCY_DATA.map((item, i) => (
+                {dynamicLatencyData.map((item, i) => (
                   <div
                     key={i}
                     onMouseEnter={() => setActiveHoverBar(i)}
@@ -309,7 +327,7 @@ export const Dashboard = () => {
               <span>11:32</span>
               <span>11:34</span>
               <span>11:36</span>
-              <span>11:39 (Now)</span>
+              <span>Now ({avgLatencyMs}ms avg)</span>
             </div>
           </div>
         </Card>
@@ -317,42 +335,97 @@ export const Dashboard = () => {
         {/* Right: Quick Launch Workspace */}
         <Card glass={false} className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-2xs flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Launch Workspace
-            </h3>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 mb-4">
-              Manage connection catalogs or query your databases with AI.
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                Quick Action Launcher
+              </h3>
+              <span className="px-2 py-0.5 text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 rounded-full border border-blue-200/80 dark:border-blue-800">
+                4 Tools
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">
+              Direct access to SQL prompt, schema explorer, catalogs, and system audit logs.
             </p>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div
-                onClick={() => navigate("/connections")}
-                className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/40 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
+                onClick={() => navigate("/chat")}
+                className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-blue-500/60 dark:hover:border-blue-500/60 bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 dark:hover:from-blue-950/30 dark:hover:to-slate-800/60 transition-all cursor-pointer flex items-center justify-between group shadow-2xs hover:scale-[1.01]"
               >
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    Manage Database Catalogs
-                  </h4>
-                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                    Configure MySQL, PostgreSQL & SQLite pool settings
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                    <Zap size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Ask AI SQL Prompt
+                    </h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                      Generate sanitized SQL from natural language
+                    </p>
+                  </div>
                 </div>
-                <ArrowRight size={16} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                <ArrowRight size={15} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
               </div>
 
               <div
-                onClick={() => navigate("/chat")}
-                className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/40 dark:hover:bg-slate-800/60 transition-all cursor-pointer flex items-center justify-between group"
+                onClick={() => navigate("/schema")}
+                className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 bg-gradient-to-r hover:from-emerald-50/50 hover:to-teal-50/50 dark:hover:from-emerald-950/30 dark:hover:to-slate-800/60 transition-all cursor-pointer flex items-center justify-between group shadow-2xs hover:scale-[1.01]"
               >
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                    Start SQL Prompt Assistant
-                  </h4>
-                  <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-                    Query databases using natural English language
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                    <Database size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Inspect Database Schemas
+                    </h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                      Explore tables, columns & foreign relationships
+                    </p>
+                  </div>
                 </div>
-                <ArrowRight size={16} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                <ArrowRight size={15} className="text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+              </div>
+
+              <div
+                onClick={() => navigate("/connections")}
+                className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-purple-500/60 dark:hover:border-purple-500/60 bg-gradient-to-r hover:from-purple-50/50 hover:to-indigo-50/50 dark:hover:from-purple-950/30 dark:hover:to-slate-800/60 transition-all cursor-pointer flex items-center justify-between group shadow-2xs hover:scale-[1.01]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all">
+                    <Activity size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Manage Catalogs & Credentials
+                    </h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                      Configure MySQL, PostgreSQL & SQLite credentials
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight size={15} className="text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+              </div>
+
+              <div
+                onClick={() => navigate("/admin")}
+                className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 hover:border-amber-500/60 dark:hover:border-amber-500/60 bg-gradient-to-r hover:from-amber-50/50 hover:to-orange-50/50 dark:hover:from-amber-950/30 dark:hover:to-slate-800/60 transition-all cursor-pointer flex items-center justify-between group shadow-2xs hover:scale-[1.01]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Security & RBAC Audit Logs
+                    </h4>
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+                      Review access logs, tenant roles & system metrics
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight size={15} className="text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </div>
@@ -360,13 +433,13 @@ export const Dashboard = () => {
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
               <ShieldCheck size={15} className="text-emerald-500" />
-              <span>RBAC Status: <strong className="text-slate-900 dark:text-white">Secure</strong></span>
+              <span>RBAC Enforcement: <strong className="text-slate-900 dark:text-white">Active</strong></span>
             </span>
             <Link
               to="/admin"
               className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
             >
-              <span>Admin Console</span>
+              <span>Audit Console</span>
               <span>→</span>
             </Link>
           </div>
