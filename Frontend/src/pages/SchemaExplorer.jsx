@@ -167,14 +167,15 @@ export const SchemaExplorer = () => {
               {/* Table Counter */}
               <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 px-1 uppercase tracking-wider">
                 <span>Tables ({filteredTables.length})</span>
-                <span>{currentSchema?.relationships?.length || 0} FKs</span>
+                <span>{currentSchema?.relationships?.length || 0} Foreign Keys</span>
               </div>
 
               {/* Table List Tree */}
               <div className="space-y-1 max-h-[calc(100vh-18rem)] overflow-y-auto pr-1">
                 {filteredTables.map((tbl) => {
-                  const isSelected = activeTable?.tableName === tbl.tableName;
+                  const isSelected = tbl.tableName === selectedTableName;
                   const isView = tbl.tableType === "VIEW";
+                  const colCount = tbl.columns?.length || 0;
 
                   return (
                     <button
@@ -192,6 +193,7 @@ export const SchemaExplorer = () => {
                       </div>
 
                       <span
+                        title={`${colCount} Columns`}
                         className={`ml-2 px-1.5 py-0.5 text-[9px] font-black uppercase rounded shrink-0 border ${
                           isSelected
                             ? "bg-white/20 text-white border-white/30"
@@ -200,7 +202,7 @@ export const SchemaExplorer = () => {
                             : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
                         }`}
                       >
-                        {isView ? "VIEW" : `${tbl.columns?.length || 0}`}
+                        {isView ? "VIEW" : `${colCount} Cols`}
                       </span>
                     </button>
                   );
@@ -214,55 +216,63 @@ export const SchemaExplorer = () => {
             {activeTable ? (
               <Card glass={false} className="p-5 sm:p-6 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xs space-y-5">
                 {/* Active Table Summary & Tab Controls */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-mono truncate">
-                        {activeTable.tableName}
-                      </h2>
-                      <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md shrink-0">
-                        {activeTable.tableType || "TABLE"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                      Metadata Definition • ~{activeTable.rowCount?.toLocaleString() || 0} Registered Records
-                    </p>
-                  </div>
+                {(() => {
+                  const activeTableRelationsCount = currentSchema?.relationships?.filter(
+                    (r) => r.parentTable === activeTable.tableName || r.childTable === activeTable.tableName
+                  ).length || 0;
 
-                  {/* Navigation Tabs */}
-                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold shrink-0">
-                    <button
-                      onClick={() => setActiveTab("columns")}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                        activeTab === "columns"
-                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold"
-                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold"
-                      }`}
-                    >
-                      Columns ({activeTable.columns?.length || 0})
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("relationships")}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                        activeTab === "relationships"
-                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold"
-                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold"
-                      }`}
-                    >
-                      Relations ({currentSchema?.relationships?.filter((r) => r.parentTable === activeTable.tableName || r.childTable === activeTable.tableName).length || 0})
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("json")}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                        activeTab === "json"
-                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold"
-                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold"
-                      }`}
-                    >
-                      JSON
-                    </button>
-                  </div>
-                </div>
+                  return (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-mono truncate">
+                            {activeTable.tableName}
+                          </h2>
+                          <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md shrink-0">
+                            {activeTable.tableType || "TABLE"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                          Metadata Definition • {activeTable.columns?.length || 0} Columns Registered • {activeTableRelationsCount} Foreign Relations
+                        </p>
+                      </div>
+
+                      {/* Navigation Tabs */}
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold shrink-0">
+                        <button
+                          onClick={() => setActiveTab("columns")}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                            activeTab === "columns"
+                              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold"
+                              : "text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold"
+                          }`}
+                        >
+                          Columns ({activeTable.columns?.length || 0})
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("relationships")}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                            activeTab === "relationships"
+                              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold"
+                              : "text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold"
+                          }`}
+                        >
+                          Relations ({activeTableRelationsCount})
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("json")}
+                          className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                            activeTab === "json"
+                              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold"
+                              : "text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold"
+                          }`}
+                        >
+                          JSON
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* TAB 1: COLUMNS TABLE */}
                 {activeTab === "columns" && (
