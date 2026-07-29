@@ -40,7 +40,9 @@ security:
 gemini:
   api:
     key: ${GEMINI_API_KEY:dummy}
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent}
 
 groq:
   api:
     key: ${GROQ_API_KEY:dummy}
+    url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
