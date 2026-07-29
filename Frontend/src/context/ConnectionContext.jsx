@@ -60,29 +60,32 @@ export const ConnectionProvider = ({ children }) => {
   // Fetch connections from backend API
   const fetchConnections = useCallback(async () => {
     if (!isAuthenticated) {
-      setConnections([]);
+      setConnections(MOCK_CONNECTIONS);
       return;
     }
     setIsLoading(true);
     setError(null);
     try {
       const res = await connectionService.getConnections();
-      const list = res?.data || res;
-      if (Array.isArray(list)) {
+      const raw = res?.data;
+      const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : Array.isArray(res) ? res : [];
+
+      if (Array.isArray(list) && list.length > 0) {
         setConnections(list);
-        if (list.length > 0) {
-          if (!list.some((c) => c.id === selectedConnectionId)) {
-            setSelectedConnectionId(list[0].id);
-          }
+        if (!list.some((c) => c.id === selectedConnectionId)) {
+          setSelectedConnectionId(list[0].id);
         }
         return;
       }
-      throw new Error("Invalid response format");
-    } catch (err) {
-      // Fallback: Use per-user local storage
-      console.warn("Backend connections API offline, using per-user local state.", err?.message);
+      
+      // If backend returns empty connections list, use per-user local/mock connections
       const localList = getOfflineUserConnections();
-      setConnections(localList);
+      setConnections(localList.length > 0 ? localList : MOCK_CONNECTIONS);
+    } catch (err) {
+      // Fallback: Use per-user local storage or mock
+      console.warn("Backend connections API error, using local connections.", err?.message);
+      const localList = getOfflineUserConnections();
+      setConnections(localList.length > 0 ? localList : MOCK_CONNECTIONS);
       if (localList.length > 0 && !localList.some((c) => c.id === selectedConnectionId)) {
         setSelectedConnectionId(localList[0].id);
       }
