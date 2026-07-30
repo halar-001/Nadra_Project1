@@ -17,8 +17,8 @@ public class SqlGeneratorService {
         this.parser = parser;
     }
 
-    public String generateSql(ChatRequest request, DatabaseSchema schema) {
-        String prompt = promptBuilder.build(request.getMessage(), schema);
+    public String generateSql(ChatRequest request, DatabaseSchema schema, java.util.List<com.aidatabaseassistant.entity.ChatMessage> chatHistory) {
+        String prompt = promptBuilder.build(request.getMessage(), schema, chatHistory);
         String raw = llmService.generate(prompt);
         return parser.extractSql(raw);
     }

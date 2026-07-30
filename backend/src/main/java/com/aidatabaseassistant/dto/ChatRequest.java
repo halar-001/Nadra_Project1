@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 public class ChatRequest {
 
-    @NotNull(message = "Connection ID is required")
-    private Long connectionId;
+    @NotNull(message = "Session ID is required")
+    private java.util.UUID sessionId;
 
     @NotBlank(message = "Message cannot be empty")
     private String message;
@@ -14,17 +14,17 @@ public class ChatRequest {
     public ChatRequest() {
     }
 
-    public ChatRequest(Long connectionId, String message) {
-        this.connectionId = connectionId;
+    public ChatRequest(java.util.UUID sessionId, String message) {
+        this.sessionId = sessionId;
         this.message = message;
     }
 
-    public Long getConnectionId() {
-        return connectionId;
+    public java.util.UUID getSessionId() {
+        return sessionId;
     }
 
-    public void setConnectionId(Long connectionId) {
-        this.connectionId = connectionId;
+    public void setSessionId(java.util.UUID sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getMessage() {

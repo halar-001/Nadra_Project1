@@ -74,6 +74,40 @@ public class ChatIntegrationTest {
                 }
             };
         }
+
+        @Bean
+        @Primary
+        public com.aidatabaseassistant.service.ChatSessionService dummyChatSessionService() {
+            return new com.aidatabaseassistant.service.ChatSessionService(null, null, null, null) {
+                @Override
+                public com.aidatabaseassistant.entity.ChatSession getSessionEntity(java.util.UUID sessionId, String userEmail) {
+                    com.aidatabaseassistant.entity.User user = new com.aidatabaseassistant.entity.User();
+                    user.setId(1L);
+                    user.setEmail(userEmail);
+                    com.aidatabaseassistant.entity.DatabaseConnection connection = new com.aidatabaseassistant.entity.DatabaseConnection();
+                    connection.setId(1L);
+                    return new com.aidatabaseassistant.entity.ChatSession(user, connection, "Test Session");
+                }
+            };
+        }
+
+        @Bean
+        @Primary
+        public com.aidatabaseassistant.service.ChatMessageService dummyChatMessageService() {
+            return new com.aidatabaseassistant.service.ChatMessageService(null, null) {
+                @Override
+                public void saveUserMessage(com.aidatabaseassistant.entity.ChatSession session, String messageText) {}
+                
+                @Override
+                public void saveAssistantMessage(com.aidatabaseassistant.entity.ChatSession session, String responseMessage, String generatedSql, 
+                                                 String validatedSql, String queryResultJson, Integer rowCount, Long executionTimeMs) {}
+                
+                @Override
+                public java.util.List<com.aidatabaseassistant.entity.ChatMessage> getHistoryForPrompt(com.aidatabaseassistant.entity.ChatSession session) {
+                    return java.util.Collections.emptyList();
+                }
+            };
+        }
     }
 
     @Autowired
@@ -85,7 +119,9 @@ public class ChatIntegrationTest {
     @Test
     @WithMockUser(username = "testuser@nadra.gov.pk")
     public void testGenerateSqlEndpoint() throws Exception {
-        ChatRequest request = new ChatRequest(1L, "Show all users");
+        ChatRequest request = new ChatRequest();
+        request.setSessionId(java.util.UUID.randomUUID());
+        request.setMessage("Show all users");
 
         mockMvc.perform(post("/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -99,7 +135,9 @@ public class ChatIntegrationTest {
 
     @Test
     public void testGenerateSqlEndpointWithoutAuth() throws Exception {
-        ChatRequest request = new ChatRequest(1L, "Show all users");
+        ChatRequest request = new ChatRequest();
+        request.setSessionId(java.util.UUID.randomUUID());
+        request.setMessage("Show all users");
 
         mockMvc.perform(post("/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)

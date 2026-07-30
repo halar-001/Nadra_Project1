@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 @Service
 public class PromptBuilderService {
 
-    public String build(String userQuestion, DatabaseSchema schema) {
+    public String build(String userQuestion, DatabaseSchema schema, java.util.List<com.aidatabaseassistant.entity.ChatMessage> chatHistory) {
         StringBuilder prompt = new StringBuilder();
         
         prompt.append("You are an expert ").append(schema.getDatabaseType()).append(" SQL assistant.\n\n");
@@ -40,6 +40,17 @@ public class PromptBuilderService {
                       .append(" -> ")
                       .append(rel.getChildTable()).append(".").append(rel.getChildColumn())
                       .append("\n");
+            }
+        }
+        
+        if (chatHistory != null && !chatHistory.isEmpty()) {
+            prompt.append("\nConversation History:\n");
+            for (com.aidatabaseassistant.entity.ChatMessage msg : chatHistory) {
+                prompt.append(msg.getRole() == com.aidatabaseassistant.entity.ChatRole.USER ? "User: " : "Assistant: ")
+                      .append(msg.getMessage()).append("\n");
+                if (msg.getRole() == com.aidatabaseassistant.entity.ChatRole.ASSISTANT && msg.getValidatedSql() != null) {
+                    prompt.append("SQL Context: ").append(msg.getValidatedSql()).append("\n");
+                }
             }
         }
         
