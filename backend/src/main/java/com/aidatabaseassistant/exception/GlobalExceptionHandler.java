@@ -1,6 +1,8 @@
 package com.aidatabaseassistant.exception;
 
 import com.aidatabaseassistant.dto.ApiResponse;
+import com.aidatabaseassistant.policy.PolicyViolationException;
+import com.aidatabaseassistant.validation.SqlValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,6 +27,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SqlValidationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleSqlValidationException(SqlValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("SQL Validation Failed: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(PolicyViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handlePolicyViolationException(PolicyViolationException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Security Policy Violation: " + ex.getMessage()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

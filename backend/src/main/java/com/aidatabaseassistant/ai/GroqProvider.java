@@ -36,7 +36,7 @@ public class GroqProvider implements LLMProvider {
         
         try {
             Map<String, Object> requestBody = Map.of(
-                "model", "llama3-8b-8192",
+                "model", "llama-3.3-70b-versatile",
                 "messages", List.of(
                     Map.of(
                         "role", "user",
@@ -69,6 +69,6 @@ public class GroqProvider implements LLMProvider {
 
     @Override
     public String getName() {
-        return "llama3-8b-8192 (Groq)";
+        return "llama-3.3-70b-versatile (Groq)";
     }
 }
