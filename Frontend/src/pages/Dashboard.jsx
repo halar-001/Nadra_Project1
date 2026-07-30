@@ -41,8 +41,14 @@ export const Dashboard = () => {
   const connectedCount = connections?.length || 0;
   const activeDbName = selectedConnection?.connectionName || connections[0]?.connectionName || "Local Database";
   const activeDbType = selectedConnection?.databaseType || connections[0]?.databaseType || "MYSQL";
-  const userQueryCount = messages?.filter((m) => m.sender === "USER")?.length || 0;
-  const aiQueryCount = messages?.filter((m) => m.sender === "AI" && !m.isError)?.length || 0;
+  // Persistent AI prompt counters (persisted across F5 refresh, reset on logout)
+  const storedUserPromptCount = Number(localStorage.getItem("user_ai_prompt_count") || 0);
+  const storedAiSqlCount = Number(localStorage.getItem("user_ai_sql_count") || 0);
+  const currentSessionUserCount = messages?.filter((m) => m.sender === "USER")?.length || 0;
+  const currentSessionAiCount = messages?.filter((m) => m.sender === "AI" && !m.isError)?.length || 0;
+
+  const userQueryCount = Math.max(storedUserPromptCount, currentSessionUserCount);
+  const aiQueryCount = Math.max(storedAiSqlCount, currentSessionAiCount);
   
   // Calculate average execution time dynamically
   const aiMessages = messages?.filter((m) => m.sender === "AI" && m.executionTimeMs);

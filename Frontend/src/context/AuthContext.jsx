@@ -38,6 +38,8 @@ export const AuthProvider = ({ children }) => {
   const clearAuthData = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("user_ai_prompt_count");
+    localStorage.removeItem("user_ai_sql_count");
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("token");
     setUser(null);

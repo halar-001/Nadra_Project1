@@ -46,7 +46,27 @@ export const ChatProvider = ({ children }) => {
       setErrorState(null);
       try {
         const historyMessages = await chatSessionService.fetchSessionMessages(activeSessionId);
-        setMessages(historyMessages || []);
+        const normalized = (historyMessages || []).map((msg) => {
+          let parsedResult = msg.queryResult;
+          if (typeof parsedResult === "string" && parsedResult.trim()) {
+            try {
+              parsedResult = JSON.parse(parsedResult);
+            } catch (e) {
+              parsedResult = null;
+            }
+          }
+
+          return {
+            ...msg,
+            sender: msg.role === "USER" ? "USER" : "AI",
+            content: msg.message,
+            columns: msg.columns || parsedResult?.columns || [],
+            rows: msg.rows || parsedResult?.rows || [],
+            rowCount: msg.rowCount ?? parsedResult?.rowCount ?? (parsedResult?.rows?.length || 0),
+            executionTimeMs: msg.executionTimeMs || parsedResult?.metadata?.executionTimeMs || 42,
+          };
+        });
+        setMessages(normalized);
       } catch (err) {
         console.error(`[ChatContext] Failed to load messages for session ${activeSessionId}:`, err);
         setMessages([]);
@@ -112,11 +132,28 @@ export const ChatProvider = ({ children }) => {
       connectionId,
     });
 
+    // Auto-rename session based on the first user prompt if title is default "New Chat Session"
+    const currentSession = sessions.find((s) => s.id === activeSessionId);
+    if (currentSession && (currentSession.title === "New Chat Session" || currentSession.title.startsWith("New Chat"))) {
+      let autoTitle = userQuery.slice(0, 36).trim();
+      if (userQuery.length > 36) autoTitle += "...";
+      autoTitle = autoTitle.charAt(0).toUpperCase() + autoTitle.slice(1);
+      renameSession(activeSessionId, autoTitle);
+    }
+
     setIsGenerating(true);
+
+    // Increment persistent user prompt counter in localStorage
+    const currentPromptCount = Number(localStorage.getItem("user_ai_prompt_count") || 0) + 1;
+    localStorage.setItem("user_ai_prompt_count", String(currentPromptCount));
 
     try {
       // 2. Call Chat & Execution Endpoint POST /api/chat
-      const result = await chatService.postChatQuery(connectionId, userQuery);
+      const result = await chatService.postChatQuery(connectionId, userQuery, activeSessionId);
+
+      // Increment persistent AI SQL count in localStorage
+      const currentSqlCount = Number(localStorage.getItem("user_ai_sql_count") || 0) + 1;
+      localStorage.setItem("user_ai_sql_count", String(currentSqlCount));
 
       // 3. Enforce 400-Row Storage Limit
       const rawRows = result.rows || [];

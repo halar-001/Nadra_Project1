@@ -122,7 +122,12 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           <div className="relative flex items-center">
             <select
               value={selectedConnectionId || ""}
-              onChange={(e) => setSelectedConnectionId(Number(e.target.value))}
+              onChange={async (e) => {
+                const newConnId = Number(e.target.value);
+                setSelectedConnectionId(newConnId);
+                await createNewSession("New Chat Session", newConnId);
+                if (location.pathname !== "/chat") navigate("/chat");
+              }}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2 px-3 pr-8 text-xs font-extrabold text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs transition-all hover:bg-slate-100 dark:hover:bg-slate-750"
             >
               {connections && connections.length > 0 ? (
@@ -210,89 +215,103 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           </div>
         </div>
 
-        {/* Recents Conversation Sessions List */}
+        {/* Recents Conversation Sessions List (Filtered by Selected Database Connection) */}
         <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
-          <div className="flex items-center justify-between px-2 py-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-            <span>Conversations</span>
-            <span>{sessions.length}</span>
-          </div>
+          {(() => {
+            const displayedSessions = sessions.filter((s) => {
+              const matchesSearch = !searchTerm.trim() || s.title.toLowerCase().includes(searchTerm.toLowerCase());
+              const matchesConn = !selectedConnectionId || !s.connectionId || Number(s.connectionId) === Number(selectedConnectionId);
+              return matchesSearch && matchesConn;
+            });
 
-          {sessions.length > 0 ? (
-            sessions.map((s) => {
-              const isSelected = s.id === activeSessionId && location.pathname === "/chat";
-              const isEditing = editingSessionId === s.id;
-
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => {
-                    setActiveSessionId(s.id);
-                    if (location.pathname !== "/chat") navigate("/chat");
-                    onCloseMobile();
-                  }}
-                  className={`group w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold border border-slate-200 dark:border-slate-700"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <MessageSquare size={13} className={isSelected ? "text-blue-500 shrink-0" : "text-slate-400 shrink-0"} />
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        autoFocus
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveRename(e, s.id);
-                        }}
-                        className="w-full bg-white dark:bg-slate-900 border border-blue-500 rounded px-1.5 py-0.5 text-xs font-semibold focus:outline-none"
-                      />
-                    ) : (
-                      <span className="truncate font-semibold text-[11px]">{s.title}</span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0 ml-1">
-                    {isEditing ? (
-                      <button
-                        onClick={(e) => handleSaveRename(e, s.id)}
-                        className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-emerald-600 rounded"
-                      >
-                        <Check size={12} />
-                      </button>
-                    ) : (
-                      <>
-                        <span className="text-[9px] font-mono text-slate-400 group-hover:hidden">
-                          {s.messageCount || 0}/40
-                        </span>
-                        <button
-                          onClick={(e) => handleStartRename(e, s)}
-                          className="hidden group-hover:block p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
-                          title="Rename Chat"
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(e, s.id)}
-                          className="hidden group-hover:block p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded"
-                          title="Delete Chat"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </>
-                    )}
-                  </div>
+            return (
+              <>
+                <div className="flex items-center justify-between px-2 py-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <span>Conversations</span>
+                  <span className="px-1.5 py-0.2 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md font-extrabold">
+                    {displayedSessions.length}
+                  </span>
                 </div>
-              );
-            })
-          ) : (
-            <div className="p-3 text-center text-slate-400 text-xs italic">
-              No matching conversations found.
-            </div>
-          )}
+
+                {displayedSessions.length > 0 ? (
+                  displayedSessions.map((s) => {
+                    const isSelected = s.id === activeSessionId && location.pathname === "/chat";
+                    const isEditing = editingSessionId === s.id;
+
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setActiveSessionId(s.id);
+                          if (location.pathname !== "/chat") navigate("/chat");
+                          onCloseMobile();
+                        }}
+                        className={`group w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold border border-slate-200 dark:border-slate-700"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <MessageSquare size={13} className={isSelected ? "text-blue-500 shrink-0" : "text-slate-400 shrink-0"} />
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveRename(e, s.id);
+                              }}
+                              className="w-full bg-white dark:bg-slate-900 border border-blue-500 rounded px-1.5 py-0.5 text-xs font-semibold focus:outline-none"
+                            />
+                          ) : (
+                            <span className="truncate font-semibold text-[11px]">{s.title}</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0 ml-1">
+                          {isEditing ? (
+                            <button
+                              onClick={(e) => handleSaveRename(e, s.id)}
+                              className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-emerald-600 rounded"
+                            >
+                              <Check size={12} />
+                            </button>
+                          ) : (
+                            <>
+                              <span className="text-[9px] font-mono text-slate-400 group-hover:hidden">
+                                {s.messageCount || 0}/40
+                              </span>
+                              <button
+                                onClick={(e) => handleStartRename(e, s)}
+                                className="hidden group-hover:block p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
+                                title="Rename Chat"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                              <button
+                                onClick={(e) => handleDelete(e, s.id)}
+                                className="hidden group-hover:block p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded"
+                                title="Delete Chat"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-3 text-center text-slate-400 text-xs italic">
+                    No conversations for this database.
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 

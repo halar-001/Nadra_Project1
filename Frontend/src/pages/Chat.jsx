@@ -172,39 +172,7 @@ export const Chat = () => {
 
   return (
     <div className="h-full w-full flex flex-col bg-transparent overflow-hidden transition-colors">
-      {/* 1. SESSION HEADER BAR */}
-      <div className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0 shadow-2xs z-10">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-xl border border-blue-200/60 dark:border-blue-800 shrink-0">
-            <Sparkles size={16} />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
-              {activeSession?.title || "Conversation Session"}
-            </h2>
-            <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-              <span>Target: <strong className="text-slate-700 dark:text-slate-300 font-bold">{activeConn?.connectionName || "MySQL"}</strong></span>
-              <span>•</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold">
-                {msgCount} / 40 Msgs
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={clearMessages}
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-bold transition-all cursor-pointer border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"
-            title="Clear Chat Messages"
-          >
-            <Trash2 size={13} />
-            <span className="hidden sm:inline">Clear Chat</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Messages Viewport */}
+      {/* Messages Viewport */}
       <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 w-full">
         {/* 40-MESSAGE LIMIT WARNING BANNER */}
         {msgCount >= 36 && (
