@@ -131,6 +131,26 @@ This final critical milestone transforms the backend into a fully autonomous, AI
 
 ---
 
+### Phase 6: SQL Validation, Security & Query Execution (COMPLETE)
+
+This milestone introduces a mathematically rigorous Abstract Syntax Tree (AST) engine to validate and secure AI-generated SQL. The zero-trust execution pipeline prevents malicious data mutation, strictly blocks unauthorized access to system tables, and enforces safe execution limits against active tenant databases.
+
+#### 📅 Day 1: JSqlParser & Syntax Validation
+- **AST Integration**: Replaced brittle regex patterns by integrating `JSqlParser` (4.7) to build and traverse an Abstract Syntax Tree of the incoming AI-generated SQL.
+- **Strict DML Blocking**: Engineered validations to instantly reject any operations that are not strictly `SELECT` statements (blocking `UPDATE`, `DELETE`, `DROP`).
+- **Multi-Statement Rejection**: Designed safety checks to intercept and block chained SQL injections, throwing custom `SqlValidationException`s.
+
+#### 📅 Day 2: Zero-Trust Policy Engine
+- **RBAC Table Blocking (`PolicyEngine.java`)**: Utilized `TablesNamesFinder` to deeply scan the AST (including nested subqueries and joins) to forcefully reject any attempts to query internal system tables (e.g., `users`, `roles`), returning a 403 Forbidden.
+- **Dynamic Safety Limits**: Protected the JVM from memory exhaustion by actively mutating the AST to forcefully inject or overwrite queries with a maximum `LIMIT 100` constraint before execution.
+
+#### 📅 Day 3: Safe Execution & Result Formatting
+- **Tenant Execution (`QueryExecutorService.java`)**: Executed the validated SQL against the user's specific external database securely, employing a strict 10-second timeout to kill hanging threads.
+- **JSON Result Formatting (`ResultFormatter.java`)**: Engineered an intelligent parser using `ResultSetMetaData` to translate the raw JDBC `ResultSet` into a standardized, dynamic payload (`QueryResponse`) suitable for React Data Grids.
+- **E2E Pipeline Orchestration**: Wired the complete end-to-end flow from schema injection, AI generation, AST validation, and policy enforcement to safe execution and JSON formatting, completing the backend lifecycle.
+
+---
+
 ## 🏗️ System Architecture & Workflow
 
 ```
