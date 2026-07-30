@@ -1,4 +1,4 @@
--- AI Database Assistant - Unified MySQL Database Schema (Phase 3)
+-- AI Database Assistant - Unified MySQL Database Schema (Phases 1 - 7)
 
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS users (
@@ -41,29 +41,33 @@ CREATE TABLE IF NOT EXISTS database_connections (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 5. Chat Sessions Table
+-- 5. Chat Sessions Table (Phase 7 - Multi-Session Management)
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     user_id BIGINT NOT NULL,
     connection_id BIGINT NOT NULL,
+    message_count INT DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (connection_id) REFERENCES database_connections(id) ON DELETE CASCADE
 );
 
--- 6. Chat Messages Table
+-- 6. Chat Messages Table (Phase 7 - Message & Execution History Persistence)
+-- Policy Rules: Max 40 messages per session, Max 400 stored rows in query_result JSON
 CREATE TABLE IF NOT EXISTS chat_messages (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     session_id BIGINT NOT NULL,
-    sender VARCHAR(10) NOT NULL, -- USER, AI
-    content TEXT NOT NULL,
-    sql_query TEXT NULL,
-    query_results LONGTEXT NULL,
-    chart_config TEXT NULL,
-    token_usage INT DEFAULT 0,
-    response_time_ms INT DEFAULT 0,
+    role VARCHAR(20) NOT NULL, -- 'USER' or 'ASSISTANT'
+    message TEXT NOT NULL,
+    generated_sql LONGTEXT NULL,
+    validated_sql LONGTEXT NULL,
+    query_result JSON NULL,
+    row_count INT DEFAULT 0,
+    execution_time_ms INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
 );
