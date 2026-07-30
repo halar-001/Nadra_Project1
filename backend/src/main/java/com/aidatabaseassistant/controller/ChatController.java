@@ -65,6 +65,15 @@ public class ChatController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/sessions/{sessionId}")
+    public ResponseEntity<com.aidatabaseassistant.dto.ChatSessionDto> renameSession(
+            @PathVariable java.util.UUID sessionId,
+            @RequestBody java.util.Map<String, String> body,
+            Authentication authentication) {
+        String title = body.get("title");
+        return ResponseEntity.ok(chatSessionService.renameSession(sessionId, title, authentication.getName()));
+    }
+
     @GetMapping("/sessions/{sessionId}/messages")
     public ResponseEntity<java.util.List<com.aidatabaseassistant.dto.ChatMessageDto>> getSessionMessages(
             @PathVariable java.util.UUID sessionId,

@@ -14,10 +14,10 @@ public class PolicyEngine {
 
     // Default system tables that should NEVER be queried by the AI
     private static final Set<String> BLOCKED_TABLES = Set.of(
-            "users", "roles", "user_roles", "database_connections"
+            "database_connections", "audit_logs", "system_metrics", "refresh_tokens"
     );
 
-    private static final long MAX_ROWS_LIMIT = 100L;
+    private static final long MAX_ROWS_LIMIT = 400L;
 
     /**
      * Applies business rules to the validated Select statement.

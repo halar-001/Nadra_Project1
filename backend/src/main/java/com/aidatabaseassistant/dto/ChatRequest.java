@@ -11,6 +11,8 @@ public class ChatRequest {
     @NotBlank(message = "Message cannot be empty")
     private String message;
 
+    private Long connectionId;
+
     public ChatRequest() {
     }
 
@@ -33,5 +35,13 @@ public class ChatRequest {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public Long getConnectionId() {
+        return connectionId;
+    }
+
+    public void setConnectionId(Long connectionId) {
+        this.connectionId = connectionId;
     }
 }

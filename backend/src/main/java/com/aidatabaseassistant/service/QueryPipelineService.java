@@ -43,7 +43,9 @@ public class QueryPipelineService {
 
         // 1. Fetch Session and Connection
         com.aidatabaseassistant.entity.ChatSession session = chatSessionService.getSessionEntity(request.getSessionId(), userEmail);
-        Long connectionId = session.getDatabaseConnection().getId();
+        Long connectionId = (request.getConnectionId() != null && request.getConnectionId() > 0)
+                ? request.getConnectionId()
+                : (session.getDatabaseConnection() != null ? session.getDatabaseConnection().getId() : 1L);
         
         // 2. Load History
         java.util.List<com.aidatabaseassistant.entity.ChatMessage> history = chatMessageService.getHistoryForPrompt(session);
