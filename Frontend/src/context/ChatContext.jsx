@@ -9,12 +9,22 @@ export const MAX_STORED_ROWS = 400; // Policy Rule: Max 400 stored rows in query
 
 export const ChatProvider = ({ children }) => {
   const [sessions, setSessions] = useState([]);
-  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeSessionId, setActiveSessionIdState] = useState(null);
   const [messages, setMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorState, setErrorState] = useState(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Helper setter to sync activeSessionId with localStorage
+  const setActiveSessionId = useCallback((id) => {
+    setActiveSessionIdState(id);
+    if (id) {
+      localStorage.setItem("active_chat_session_id", String(id));
+    } else {
+      localStorage.removeItem("active_chat_session_id");
+    }
+  }, []);
 
   // 1. Load Initial Sessions on Mount
   useEffect(() => {
@@ -23,7 +33,14 @@ export const ChatProvider = ({ children }) => {
         const fetchedSessions = await chatSessionService.fetchSessions();
         if (fetchedSessions && fetchedSessions.length > 0) {
           setSessions(fetchedSessions);
-          setActiveSessionId(fetchedSessions[0].id);
+          const savedActiveId = localStorage.getItem("active_chat_session_id");
+          const foundSaved = fetchedSessions.find((s) => String(s.id) === String(savedActiveId));
+
+          if (savedActiveId && foundSaved) {
+            setActiveSessionId(foundSaved.id);
+          } else {
+            setActiveSessionId(fetchedSessions[0].id);
+          }
         } else {
           // If empty, create default session
           const created = await chatSessionService.createSession("University Students & CGPA Analysis", 1);
@@ -35,7 +52,8 @@ export const ChatProvider = ({ children }) => {
       }
     };
     initSessions();
-  }, []);
+  }, [setActiveSessionId]);
+
 
   // 2. Load Session Messages when activeSessionId changes (Instant 0-Token History Viewing)
   useEffect(() => {
