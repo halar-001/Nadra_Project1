@@ -1,18 +1,22 @@
 package com.aidatabaseassistant.dto;
 
+import com.aidatabaseassistant.formatter.QueryResponse;
+
 public class ChatResponse {
     
     private String generatedSql;
     private String model;
     private long executionTimeMs;
+    private QueryResponse queryResult;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(String generatedSql, String model, long executionTimeMs) {
+    public ChatResponse(String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
         this.generatedSql = generatedSql;
         this.model = model;
         this.executionTimeMs = executionTimeMs;
+        this.queryResult = queryResult;
     }
 
     public String getGeneratedSql() {
@@ -37,5 +41,13 @@ public class ChatResponse {
 
     public void setExecutionTimeMs(long executionTimeMs) {
         this.executionTimeMs = executionTimeMs;
+    }
+
+    public QueryResponse getQueryResult() {
+        return queryResult;
+    }
+
+    public void setQueryResult(QueryResponse queryResult) {
+        this.queryResult = queryResult;
     }
 }

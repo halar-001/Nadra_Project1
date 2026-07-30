@@ -1,6 +1,8 @@
 package com.aidatabaseassistant.controller;
 
 import com.aidatabaseassistant.dto.ChatRequest;
+import com.aidatabaseassistant.executor.QueryExecutorService;
+import com.aidatabaseassistant.formatter.QueryResponse;
 import com.aidatabaseassistant.model.schema.DatabaseSchema;
 import com.aidatabaseassistant.service.LLMService;
 import com.aidatabaseassistant.service.SchemaCacheService;
@@ -46,7 +48,18 @@ public class ChatIntegrationTest {
             return new LLMService(List.of()) {
                 @Override
                 public String generate(String prompt) {
-                    return "```sql\nSELECT * FROM users;\n```";
+                    return "```sql\nSELECT * FROM students;\n```";
+                }
+            };
+        }
+
+        @Bean
+        @Primary
+        public QueryExecutorService dummyQueryExecutor() {
+            return new QueryExecutorService(null, null) {
+                @Override
+                public QueryResponse executeQuery(Long connectionId, String userEmail, String sql) {
+                    return new QueryResponse(List.of("id", "name"), List.of(List.of(1, "Test Student")), java.util.Map.of("rowCount", 1, "executionTimeMs", 5));
                 }
             };
         }
@@ -78,9 +91,10 @@ public class ChatIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generatedSql").value("SELECT * FROM users;"))
+                .andExpect(jsonPath("$.generatedSql").value("SELECT * FROM students LIMIT 100"))
                 .andExpect(jsonPath("$.model").value("auto-fallback-engine"))
-                .andExpect(jsonPath("$.executionTimeMs").isNumber());
+                .andExpect(jsonPath("$.executionTimeMs").isNumber())
+                .andExpect(jsonPath("$.queryResult.metadata.rowCount").value(1));
     }
 
     @Test
