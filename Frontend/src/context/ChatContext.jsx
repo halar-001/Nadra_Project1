@@ -20,10 +20,18 @@ export const ChatProvider = ({ children }) => {
     {
       id: 1,
       sender: "AI",
-      content: "Hello! Ask me any database question in plain English. I will construct the schema-aware sanitized SQL query for you.",
+      content: "Hello! Ask me any database question in plain English. I will construct the schema-aware sanitized SQL query and execute it safely for you.",
       generatedSql: "SELECT s.student_id, s.name, s.cgpa\nFROM students s\nJOIN departments d ON s.department_id = d.department_id\nWHERE d.department_name = 'Computer Science'\n  AND s.cgpa > 3.5;",
-      model: "gemini-1.5-flash",
-      executionTimeMs: 812,
+      columns: ["student_id", "name", "cgpa"],
+      rows: [
+        [101, "Ali Khan", 3.85],
+        [104, "Sara Ahmed", 3.92],
+        [109, "Usman Tariq", 3.65],
+        [112, "Zainab Fatima", 3.78],
+      ],
+      rowCount: 4,
+      model: "llama-3.3-70b-versatile (Groq)",
+      executionTimeMs: 42,
       createdAt: new Date().toISOString(),
     },
   ]);
@@ -35,7 +43,7 @@ export const ChatProvider = ({ children }) => {
   };
 
   /**
-   * Send natural-language user prompt to Phase 5 AI SQL Generator service
+   * Send natural-language user prompt to Phase 6 AI Chat & Execution endpoint
    */
   const sendPrompt = async (promptText, connectionId) => {
     if (!promptText || !promptText.trim()) return;
@@ -53,21 +61,24 @@ export const ChatProvider = ({ children }) => {
     setIsGenerating(true);
 
     try {
-      // 2. Call Phase 5 Chat Endpoint POST /api/chat
+      // 2. Call Phase 6 Chat & Execution Endpoint POST /api/chat
       const result = await chatService.postChatQuery(connectionId, userQuery);
 
-      // 3. Add AI Generated SQL Message
+      // 3. Add AI Generated & Executed SQL Message
       addMessage({
         sender: "AI",
-        content: `Generated SQL query for: "${userQuery}"`,
+        content: `Executed SQL query for: "${userQuery}"`,
         generatedSql: result.generatedSql,
+        columns: result.columns,
+        rows: result.rows,
+        rowCount: result.rowCount ?? (result.rows?.length || 0),
         model: result.model,
         executionTimeMs: result.executionTimeMs,
         connectionId,
       });
     } catch (err) {
       console.error("Chat Error:", err);
-      const errMsg = err?.message || "Failed to generate SQL query from AI provider.";
+      const errMsg = err?.message || "Failed to generate or execute SQL query.";
       setErrorState(errMsg);
 
       addMessage({
