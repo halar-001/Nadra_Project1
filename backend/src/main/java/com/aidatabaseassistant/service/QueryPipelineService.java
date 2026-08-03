@@ -41,8 +41,21 @@ public class QueryPipelineService {
     public ChatResponse processQuery(ChatRequest request, String userEmail) {
         long startTime = System.currentTimeMillis();
 
-        // 1. Fetch Session and Connection
-        com.aidatabaseassistant.entity.ChatSession session = chatSessionService.getSessionEntity(request.getSessionId(), userEmail);
+        // 1. Fetch Session and target Connection
+        com.aidatabaseassistant.entity.ChatSession session;
+        try {
+            if (request.getSessionId() != null) {
+                session = chatSessionService.getSessionEntity(request.getSessionId(), userEmail);
+            } else {
+                throw new RuntimeException("SessionId is null");
+            }
+        } catch (Exception e) {
+            com.aidatabaseassistant.dto.CreateChatSessionRequest createReq =
+                    new com.aidatabaseassistant.dto.CreateChatSessionRequest(request.getConnectionId(), "New Chat Session");
+            com.aidatabaseassistant.dto.ChatSessionDto createdDto = chatSessionService.createSession(createReq, userEmail);
+            session = chatSessionService.getSessionEntity(createdDto.getId(), userEmail);
+        }
+
         Long connectionId = (request.getConnectionId() != null && request.getConnectionId() > 0)
                 ? request.getConnectionId()
                 : (session.getDatabaseConnection() != null ? session.getDatabaseConnection().getId() : 1L);
@@ -54,7 +67,9 @@ public class QueryPipelineService {
         DatabaseSchema schema = schemaService.selectRelevantSchema(connectionId, request.getMessage(), userEmail);
 
         // 4. Generate raw SQL via LLM using History
-        String rawSql = sqlGeneratorService.generateSql(request, schema, history);
+        SqlGeneratorService.GeneratedSqlResult sqlResult = sqlGeneratorService.generateSql(request, schema, history);
+        String rawSql = sqlResult.getSql();
+        String activeModelName = sqlResult.getProviderName();
 
         // 5. Validate Syntax & Ensure Single SELECT
         Select selectStatement = sqlValidator.validateAndParse(rawSql);
@@ -90,6 +105,6 @@ public class QueryPipelineService {
         );
 
         // 10. Return Response
-        return new ChatResponse(safeSql, "auto-fallback-engine", executionTimeMs, queryResult);
+        return new ChatResponse(session.getId(), safeSql, activeModelName, executionTimeMs, queryResult);
     }
 }

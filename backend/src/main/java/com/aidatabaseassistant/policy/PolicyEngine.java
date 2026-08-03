@@ -12,7 +12,7 @@ import java.util.Set;
 @Component
 public class PolicyEngine {
 
-    // Default system tables that should NEVER be queried by the AI
+    // Infrastructure system tables that should NEVER be queried across connections
     private static final Set<String> BLOCKED_TABLES = Set.of(
             "database_connections", "audit_logs", "system_metrics", "refresh_tokens"
     );

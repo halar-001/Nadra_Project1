@@ -19,11 +19,25 @@ public class LLMService {
         this.providers = providers;
     }
 
-    public String generate(String prompt) {
+    public static class LLMResponse {
+        private final String content;
+        private final String providerName;
+
+        public LLMResponse(String content, String providerName) {
+            this.content = content;
+            this.providerName = providerName;
+        }
+
+        public String getContent() { return content; }
+        public String getProviderName() { return providerName; }
+    }
+
+    public LLMResponse generate(String prompt) {
         for (LLMProvider provider : providers) {
             try {
                 logger.info("Attempting to generate SQL using AI Provider: {}", provider.getName());
-                return provider.generate(prompt);
+                String content = provider.generate(prompt);
+                return new LLMResponse(content, provider.getName());
             } catch (Exception e) {
                 logger.warn("AI Provider {} failed: {}", provider.getName(), e.getMessage());
                 // Continue to the next provider

@@ -16,12 +16,12 @@ public class PromptBuilderService {
         
         prompt.append("You are an expert ").append(schema.getDatabaseType()).append(" SQL assistant.\n\n");
         prompt.append("Rules:\n");
-        prompt.append("- Generate ONLY a single SELECT query.\n");
+        prompt.append("- Generate ONLY a single valid SELECT query.\n");
+        prompt.append("- STRICT RULE: Use ONLY table names and column names explicitly provided in the Schema section below. DO NOT invent, assume, or hallucinate table names or column names (such as users, roles, user_roles) if they are not listed in the provided Schema.\n");
         prompt.append("- Never use INSERT, UPDATE, DELETE, DROP, ALTER, or TRUNCATE.\n");
         prompt.append("- Use table aliases.\n");
-        prompt.append("- Use explicit JOIN conditions.\n");
-        prompt.append("- Do not explain the query. Output strictly the SQL.\n");
-        prompt.append("- STRICT RULE: Use ONLY table names and column names explicitly provided in the Schema section below. DO NOT invent, assume, or hallucinate table names or column names (such as users, roles, user_roles) if they are not listed in the provided Schema.\n\n");
+        prompt.append("- Use explicit JOIN conditions when joining multiple tables.\n");
+        prompt.append("- Do not explain the query. Output strictly the SQL.\n\n");
         
         prompt.append("Schema:\n");
         for (TableMetadata table : schema.getTables()) {
