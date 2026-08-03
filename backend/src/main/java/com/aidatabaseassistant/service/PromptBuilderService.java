@@ -11,15 +11,16 @@ import java.util.stream.Collectors;
 @Service
 public class PromptBuilderService {
 
-    public String build(String userQuestion, DatabaseSchema schema) {
+    public String build(String userQuestion, DatabaseSchema schema, java.util.List<com.aidatabaseassistant.entity.ChatMessage> chatHistory) {
         StringBuilder prompt = new StringBuilder();
         
         prompt.append("You are an expert ").append(schema.getDatabaseType()).append(" SQL assistant.\n\n");
         prompt.append("Rules:\n");
-        prompt.append("- Generate ONLY a single SELECT query.\n");
+        prompt.append("- Generate ONLY a single valid SELECT query.\n");
+        prompt.append("- STRICT RULE: Use ONLY table names and column names explicitly provided in the Schema section below. DO NOT invent, assume, or hallucinate table names or column names (such as users, roles, user_roles) if they are not listed in the provided Schema.\n");
         prompt.append("- Never use INSERT, UPDATE, DELETE, DROP, ALTER, or TRUNCATE.\n");
         prompt.append("- Use table aliases.\n");
-        prompt.append("- Use explicit JOIN conditions.\n");
+        prompt.append("- Use explicit JOIN conditions when joining multiple tables.\n");
         prompt.append("- Do not explain the query. Output strictly the SQL.\n\n");
         
         prompt.append("Schema:\n");
@@ -40,6 +41,17 @@ public class PromptBuilderService {
                       .append(" -> ")
                       .append(rel.getChildTable()).append(".").append(rel.getChildColumn())
                       .append("\n");
+            }
+        }
+        
+        if (chatHistory != null && !chatHistory.isEmpty()) {
+            prompt.append("\nConversation History:\n");
+            for (com.aidatabaseassistant.entity.ChatMessage msg : chatHistory) {
+                prompt.append(msg.getRole() == com.aidatabaseassistant.entity.ChatRole.USER ? "User: " : "Assistant: ")
+                      .append(msg.getMessage()).append("\n");
+                if (msg.getRole() == com.aidatabaseassistant.entity.ChatRole.ASSISTANT && msg.getValidatedSql() != null) {
+                    prompt.append("SQL Context: ").append(msg.getValidatedSql()).append("\n");
+                }
             }
         }
         

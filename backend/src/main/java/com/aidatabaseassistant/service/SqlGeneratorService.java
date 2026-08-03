@@ -17,9 +17,23 @@ public class SqlGeneratorService {
         this.parser = parser;
     }
 
-    public String generateSql(ChatRequest request, DatabaseSchema schema) {
-        String prompt = promptBuilder.build(request.getMessage(), schema);
-        String raw = llmService.generate(prompt);
-        return parser.extractSql(raw);
+    public static class GeneratedSqlResult {
+        private final String sql;
+        private final String providerName;
+
+        public GeneratedSqlResult(String sql, String providerName) {
+            this.sql = sql;
+            this.providerName = providerName;
+        }
+
+        public String getSql() { return sql; }
+        public String getProviderName() { return providerName; }
+    }
+
+    public GeneratedSqlResult generateSql(ChatRequest request, DatabaseSchema schema, java.util.List<com.aidatabaseassistant.entity.ChatMessage> chatHistory) {
+        String prompt = promptBuilder.build(request.getMessage(), schema, chatHistory);
+        LLMService.LLMResponse response = llmService.generate(prompt);
+        String sql = parser.extractSql(response.getContent());
+        return new GeneratedSqlResult(sql, response.getProviderName());
     }
 }

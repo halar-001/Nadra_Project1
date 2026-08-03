@@ -68,8 +68,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (io.jsonwebtoken.JwtException e) {
-            exceptionResolver.resolveException(request, response, null, e);
-            return;
+            // Ignore the exception and allow the request to proceed as unauthenticated.
+            // Spring Security's authorization rules will deny access later if the endpoint is protected.
         }
         
         filterChain.doFilter(request, response);

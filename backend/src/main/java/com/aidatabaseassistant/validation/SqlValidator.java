@@ -24,11 +24,11 @@ public class SqlValidator {
         try {
             // Use Statements to check if multiple statements were provided (e.g. "SELECT *; DROP TABLE;")
             Statements statements = CCJSqlParserUtil.parseStatements(rawSql);
-            if (statements.getStatements().size() > 1) {
+            if (statements.size() > 1) {
                 throw new SqlValidationException("Multiple SQL statements detected. Only a single statement is allowed.");
             }
 
-            Statement statement = statements.getStatements().get(0);
+            Statement statement = statements.get(0);
             
             // Strictly require a SELECT statement (blocks INSERT, UPDATE, DELETE, DROP, etc.)
             if (!(statement instanceof Select)) {
