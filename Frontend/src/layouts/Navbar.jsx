@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useChat } from "../context/ChatContext";
 import { getHealth } from "../services/healthService";
-import { Sun, Moon, Menu } from "lucide-react";
+import { Sun, Moon, Menu, Trash2 } from "lucide-react";
 
 export const Navbar = ({ onToggleMobileSidebar }) => {
   const { theme, toggleTheme } = useTheme();
+  const { messages, clearMessages } = useChat();
   const [backendOnline, setBackendOnline] = useState(false);
   const location = useLocation();
 
@@ -18,7 +20,7 @@ export const Navbar = ({ onToggleMobileSidebar }) => {
   const getPageTitle = () => {
     switch (location.pathname) {
       case "/chat":
-        return { title: "Database Workspace", subtitle: "Session ID: 35" };
+        return { title: "Database Workspace", subtitle: `${messages?.length || 0} / 40 Msgs` };
       case "/dashboard":
         return { title: "DataPulse Dashboard", subtitle: "System Telemetry & Overview" };
       case "/connections":
@@ -30,7 +32,7 @@ export const Navbar = ({ onToggleMobileSidebar }) => {
       case "/admin":
         return { title: "System Audit Logs", subtitle: "Admin Security Trail" };
       default:
-        return { title: "Database Workspace", subtitle: "Session ID: 35" };
+        return { title: "Database Workspace", subtitle: `${messages?.length || 0} / 40 Msgs` };
     }
   };
 
@@ -76,14 +78,28 @@ export const Navbar = ({ onToggleMobileSidebar }) => {
         </div>
       </div>
 
-      {/* Theme Toggle Button */}
-      <button
-        onClick={toggleTheme}
-        className="p-2.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs hover:scale-105"
-        title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
-      >
-        {theme === "dark" ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-600" />}
-      </button>
+      {/* Right Controls: Clear Chat & Theme Toggle */}
+      <div className="flex items-center gap-2.5">
+        {location.pathname === "/chat" && (
+          <button
+            onClick={clearMessages}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 text-xs font-extrabold transition-all cursor-pointer border border-slate-200/90 dark:border-slate-700 flex items-center gap-1.5 shadow-2xs hover:scale-105"
+            title="Clear Chat Messages"
+          >
+            <Trash2 size={13} className="text-rose-500" />
+            <span className="hidden sm:inline">Clear Chat</span>
+          </button>
+        )}
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs hover:scale-105"
+          title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+        >
+          {theme === "dark" ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-600" />}
+        </button>
+      </div>
     </header>
   );
 };

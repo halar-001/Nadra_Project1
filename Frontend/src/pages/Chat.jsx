@@ -20,11 +20,22 @@ import {
   Table as TableIcon,
   ChevronLeft,
   ChevronRight,
-  Layers,
+  Play,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 
 export const Chat = () => {
-  const { messages, isGenerating, sendPrompt } = useChat();
+  const {
+    sessions,
+    allSessions,
+    activeSessionId,
+    messages,
+    isGenerating,
+    isLoadingHistory,
+    sendPrompt,
+    clearMessages,
+  } = useChat();
   const { connections, selectedConnectionId, setSelectedConnectionId } = useConnection();
 
   const [inputQuery, setInputQuery] = useState("");
@@ -32,7 +43,8 @@ export const Chat = () => {
   const [currentPageMap, setCurrentPageMap] = useState({});
   const messagesEndRef = useRef(null);
 
-  // Active Connection Details
+  // Active Session & Active Connection Details
+  const activeSession = allSessions.find((s) => s.id === activeSessionId) || sessions[0];
   const activeConn = connections.find((c) => c.id === selectedConnectionId) || connections[0];
 
   // Auto-scroll to bottom of chat
@@ -48,6 +60,12 @@ export const Chat = () => {
     const query = inputQuery;
     setInputQuery("");
     await sendPrompt(query, selectedConnectionId);
+  };
+
+  // Handle Re-Run Query (Run Again)
+  const handleReRunQuery = async (queryText) => {
+    if (!queryText || isGenerating) return;
+    await sendPrompt(queryText, selectedConnectionId);
   };
 
   // SQL IDE Syntax Highlighter
@@ -150,12 +168,30 @@ export const Chat = () => {
   };
 
   const ITEMS_PER_PAGE = 10;
+  const msgCount = messages.length;
 
   return (
     <div className="h-full w-full flex flex-col bg-transparent overflow-hidden transition-colors">
-      {/* 1. Messages Viewport */}
+      {/* Messages Viewport */}
       <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 w-full">
-        {messages.map((m) => {
+        {/* 40-MESSAGE LIMIT WARNING BANNER */}
+        {msgCount >= 36 && (
+          <div className="max-w-5xl mx-auto w-full p-3 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-900/60 rounded-2xl flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300 animate-pulse">
+            <AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              Conversation capacity limit approaching ({msgCount}/40 messages). Oldest message pairs will automatically be pruned when reaching 40 to preserve optimal database size.
+            </span>
+          </div>
+        )}
+
+        {/* LOADING HISTORY INDICATOR */}
+        {isLoadingHistory && (
+          <div className="max-w-5xl mx-auto w-full p-6 text-center text-xs font-bold text-slate-400 animate-pulse">
+            Loading session history from database...
+          </div>
+        )}
+
+        {!isLoadingHistory && messages.map((m) => {
           const currentPage = currentPageMap[m.id] || 1;
           const totalRows = m.rows?.length || 0;
           const totalPages = Math.ceil(totalRows / ITEMS_PER_PAGE) || 1;
@@ -166,16 +202,16 @@ export const Chat = () => {
           return (
             <div key={m.id} className="space-y-4 w-full max-w-5xl mx-auto">
               {/* USER MESSAGE BUBBLE */}
-              {m.sender === "USER" && (
+              {(m.sender === "USER" || m.role === "USER") && (
                 <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="max-w-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white px-5 py-3 rounded-2xl rounded-tr-none text-sm font-semibold shadow-md shadow-blue-500/15 leading-relaxed">
-                    {m.content}
+                    {m.content || m.message}
                   </div>
                 </div>
               )}
 
               {/* AI ERROR RESPONSE CARD */}
-              {m.sender === "AI" && m.isError && (
+              {(m.sender === "AI" || m.role === "ASSISTANT") && m.isError && (
                 <div className="w-full bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200/90 dark:border-rose-900/60 rounded-3xl p-5 sm:p-6 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200 shadow-xs">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-500/20 shrink-0">
@@ -186,7 +222,7 @@ export const Chat = () => {
                         AI Provider API Error
                       </h4>
                       <p className="text-xs text-rose-700 dark:text-rose-300 font-medium leading-relaxed">
-                        {m.content?.replace(/^⚠️ Error:\s*/, "") || "All AI providers failed to generate or execute SQL. Please check your API keys or internet connection."}
+                        {(m.content || m.message)?.replace(/^⚠️ Error:\s*/, "") || "All AI providers failed to generate or execute SQL. Please check your API keys or internet connection."}
                       </p>
                     </div>
                   </div>
@@ -194,42 +230,54 @@ export const Chat = () => {
               )}
 
               {/* AI SUCCESS RESPONSE CARD CONTAINER */}
-              {m.sender === "AI" && !m.isError && (
+              {(m.sender === "AI" || m.role === "ASSISTANT") && !m.isError && (
                 <div className="w-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-md shadow-slate-200/30 dark:shadow-none space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-300">
                   {/* AI Text Summary / Intro */}
-                  {m.content && (
+                  {(m.content || m.message) && (
                     <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
-                      {m.content}
+                      {m.content || m.message}
                     </p>
                   )}
 
                   {/* SANITIZED SQL QUERY BOX */}
                   {(m.generatedSql || m.sqlQuery) && (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 font-black text-[10px] tracking-wider uppercase shadow-2xs">
                           <CheckCircle2 size={13} />
                           <span>SANITIZED SQL QUERY</span>
                         </div>
 
-                        {/* COPY SQL BUTTON */}
-                        <button
-                          onClick={() => handleCopySql(m.generatedSql || m.sqlQuery, m.id)}
-                          className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-bold transition-all cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs"
-                          title="Copy SQL Query to Clipboard"
-                        >
-                          {copiedId === m.id ? (
-                            <>
-                              <Check size={13} className="text-emerald-500" />
-                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={13} />
-                              <span>Copy SQL</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {/* RE-RUN QUERY BUTTON */}
+                          <button
+                            onClick={() => handleReRunQuery(m.content?.replace(/^Executed SQL query for:\s*"/, "").replace(/"$/, "") || m.message)}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold transition-all cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs"
+                            title="Re-execute SQL query on active database"
+                          >
+                            <RotateCcw size={12} />
+                            <span>Run Again</span>
+                          </button>
+
+                          {/* COPY SQL BUTTON */}
+                          <button
+                            onClick={() => handleCopySql(m.generatedSql || m.sqlQuery, m.id)}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-bold transition-all cursor-pointer border border-slate-200 dark:border-slate-700 shadow-2xs"
+                            title="Copy SQL Query to Clipboard"
+                          >
+                            {copiedId === m.id ? (
+                              <>
+                                <Check size={13} className="text-emerald-500" />
+                                <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} />
+                                <span>Copy SQL</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       {/* SQL Code Block */}
@@ -239,7 +287,7 @@ export const Chat = () => {
                     </div>
                   )}
 
-                  {/* PHASE 6: EXECUTION TABULAR RESULTS DISPLAY */}
+                  {/* PHASE 7: EXECUTION TABULAR RESULTS DISPLAY */}
                   {m.columns && m.columns.length > 0 && (
                     <div className="space-y-3 pt-2">
                       {/* Summary Metrics & Export Bar */}
@@ -395,7 +443,7 @@ export const Chat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 2. Bottom Input Form */}
+      {/* 3. Bottom Input Form */}
       <div className="p-4 sm:px-6 bg-transparent w-full shrink-0">
         <form onSubmit={handleSend} className="max-w-5xl mx-auto w-full">
           <div className="relative flex items-center w-full">

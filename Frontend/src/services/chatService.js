@@ -57,19 +57,30 @@ export const chatService = {
    * Payload: { connectionId, message }
    * Returns: { generatedSql, columns, rows, metadata: { rowCount, executionTimeMs, model } }
    */
-  postChatQuery: async (connectionId, message) => {
+  postChatQuery: async (connectionId, message, sessionId) => {
     const startTime = Date.now();
-    try {
-      const response = await api.post("/chat", {
-        connectionId: Number(connectionId),
-        message: message.trim(),
-      });
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validSessionId = sessionId && uuidRegex.test(String(sessionId))
+      ? String(sessionId)
+      : null;
 
-      const payload = response.data;
-      const data = payload?.data || payload;
+    try {
+      const requestPayload = {
+        connectionId: connectionId ? Number(connectionId) : null,
+        message: message.trim(),
+      };
+      if (validSessionId) {
+        requestPayload.sessionId = validSessionId;
+      }
+      const response = await api.post("/chat", requestPayload);
+
+      const resPayload = response.data;
+      const data = resPayload?.data || resPayload;
       const queryResult = data?.queryResult || data?.result || data;
 
       return {
+        sessionId: data.sessionId || null,
         generatedSql: data.generatedSql || data.sql || "SELECT * FROM dual;",
         columns: queryResult?.columns || data?.columns || [],
         rows: queryResult?.rows || data?.rows || [],
@@ -86,6 +97,10 @@ export const chatService = {
           error.response?.data?.data ||
           "AI Provider failed to generate or execute SQL. Please check your API keys or internet connection.";
         throw new Error(backendMessage);
+      }
+
+      if (error.code === 'ECONNABORTED') {
+        throw new Error("The request timed out. The AI took too long to generate SQL.");
       }
 
       // ONLY use offline mock generator if Backend Server is completely disconnected (Network Error / Port 8080 down)
