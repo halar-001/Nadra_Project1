@@ -76,25 +76,6 @@ export const ChatProvider = ({ children }) => {
 
           const cols = msg.columns || parsedResult?.columns || [];
           const rowsData = msg.rows || parsedResult?.rows || [];
-          
-          // MOCK VISUALIZATION FOR PHASE 8 TESTING (Remove when backend is ready)
-          let mockVis = null;
-          if (rowsData.length > 0 && cols.length >= 2) {
-            mockVis = {
-              recommendedChart: "BAR",
-              availableCharts: ["BAR", "LINE", "PIE"],
-              config: {
-                title: `Result Analytics`,
-                labels: rowsData.slice(0, 7).map(r => String(r[0] || 'Unknown')),
-                datasets: [
-                  {
-                    label: "Metric",
-                    data: rowsData.slice(0, 7).map(r => Number(r[1]) || Math.floor(Math.random() * 100))
-                  }
-                ]
-              }
-            };
-          }
 
           return {
             ...msg,
@@ -104,7 +85,7 @@ export const ChatProvider = ({ children }) => {
             rows: rowsData,
             rowCount: msg.rowCount ?? parsedResult?.rowCount ?? (rowsData.length || 0),
             executionTimeMs: msg.executionTimeMs || parsedResult?.metadata?.executionTimeMs || 42,
-            visualization: msg.visualization || parsedResult?.visualization || mockVis,
+            visualization: msg.visualization || parsedResult?.visualization || null,
           };
         });
         setMessages(normalized);
@@ -204,22 +185,6 @@ export const ChatProvider = ({ children }) => {
         console.log(`[ChatContext] Truncated query results from ${rawRows.length} to ${MAX_STORED_ROWS} rows for storage efficiency.`);
       }
 
-      // MOCK VISUALIZATION FOR PHASE 8 TESTING (Remove when backend is ready)
-      const mockVisualization = {
-        recommendedChart: "BAR",
-        availableCharts: ["BAR", "LINE", "PIE"],
-        config: {
-          title: `Result Analytics: ${userQuery}`,
-          labels: cappedRows.slice(0, 7).map(r => String(r[0] || 'Unknown')),
-          datasets: [
-            {
-              label: "Metric",
-              data: cappedRows.slice(0, 7).map(r => Number(r[1]) || Math.floor(Math.random() * 100))
-            }
-          ]
-        }
-      };
-
       // 4. Add AI Generated & Executed SQL Message
       addMessageToState({
         sender: "AI",
@@ -232,7 +197,7 @@ export const ChatProvider = ({ children }) => {
         rowCount: result.rowCount ?? rawRows.length,
         model: result.model,
         executionTimeMs: result.executionTimeMs,
-        visualization: result.visualization || (cappedRows.length > 0 && result.columns?.length >= 2 ? mockVisualization : null),
+        visualization: result.visualization || null,
         connectionId,
       });
 
