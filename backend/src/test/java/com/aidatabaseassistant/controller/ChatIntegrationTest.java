@@ -47,8 +47,8 @@ public class ChatIntegrationTest {
         public LLMService dummyLlmService() {
             return new LLMService(List.of()) {
                 @Override
-                public String generate(String prompt) {
-                    return "```sql\nSELECT * FROM students;\n```";
+                public LLMResponse generate(String prompt) {
+                    return new LLMResponse("```sql\nSELECT * FROM students;\n```", "auto-fallback-engine");
                 }
             };
         }
@@ -127,7 +127,7 @@ public class ChatIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generatedSql").value("SELECT * FROM students LIMIT 100"))
+                .andExpect(jsonPath("$.generatedSql").value("SELECT * FROM students LIMIT 400"))
                 .andExpect(jsonPath("$.model").value("auto-fallback-engine"))
                 .andExpect(jsonPath("$.executionTimeMs").isNumber())
                 .andExpect(jsonPath("$.queryResult.metadata.rowCount").value(1));

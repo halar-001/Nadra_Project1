@@ -9,16 +9,22 @@ public class ChatResponse {
     private String model;
     private long executionTimeMs;
     private QueryResponse queryResult;
+    private com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
+    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult, com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization) {
         this.sessionId = sessionId;
         this.generatedSql = generatedSql;
         this.model = model;
         this.executionTimeMs = executionTimeMs;
         this.queryResult = queryResult;
+        this.visualization = visualization;
+    }
+
+    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
+        this(sessionId, generatedSql, model, executionTimeMs, queryResult, null);
     }
 
     public java.util.UUID getSessionId() {
@@ -59,5 +65,13 @@ public class ChatResponse {
 
     public void setQueryResult(QueryResponse queryResult) {
         this.queryResult = queryResult;
+    }
+
+    public com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse getVisualization() {
+        return visualization;
+    }
+
+    public void setVisualization(com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization) {
+        this.visualization = visualization;
     }
 }
