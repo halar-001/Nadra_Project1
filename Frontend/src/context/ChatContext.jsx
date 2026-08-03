@@ -195,6 +195,20 @@ export const ChatProvider = ({ children }) => {
         executionTimeMs: result.executionTimeMs,
         connectionId,
       });
+
+      // 5. Instantly sync backend-returned session UUID & refresh sessions list
+      if (result.sessionId && String(result.sessionId) !== String(activeSessionId)) {
+        setActiveSessionId(result.sessionId);
+      }
+
+      try {
+        const freshSessions = await chatSessionService.fetchSessions();
+        if (freshSessions && freshSessions.length > 0) {
+          setSessions(freshSessions);
+        }
+      } catch (e) {
+        // ignore background refresh errors
+      }
     } catch (err) {
       console.error("[ChatContext] Chat Execution Error:", err);
       const errMsg = err?.message || "Failed to generate or execute SQL query.";
@@ -216,13 +230,19 @@ export const ChatProvider = ({ children }) => {
   /**
    * Create a new chat session
    */
-  const createNewSession = async (title = "New Chat Session", connectionId = 1) => {
+  const createNewSession = async (title = "New Chat Session", connectionId = null) => {
     try {
       const newSession = await chatSessionService.createSession(title, connectionId);
-      setSessions((prev) => [newSession, ...prev]);
-      setActiveSessionId(newSession.id);
-      setMessages([]);
-      setErrorState(null);
+      if (newSession && newSession.id) {
+        setSessions((prev) => {
+          const exists = prev.some((s) => s.id === newSession.id);
+          return exists ? prev : [newSession, ...prev];
+        });
+        setActiveSessionId(newSession.id);
+        setMessages([]);
+        setErrorState(null);
+        return newSession;
+      }
     } catch (err) {
       console.error("[ChatContext] Failed to create new session:", err);
     }

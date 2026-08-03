@@ -117,12 +117,13 @@ export const chatSessionService = {
    * Create a new conversation session.
    * Calls POST /api/chat/sessions
    */
-  createSession: async (title = "New Chat Session", connectionId = 1) => {
+  createSession: async (title = "New Chat Session", connectionId) => {
     try {
-      const response = await api.post("/chat/sessions", {
-        title,
-        connectionId: Number(connectionId),
-      });
+      const reqBody = { title };
+      if (connectionId && Number(connectionId) > 0) {
+        reqBody.connectionId = Number(connectionId);
+      }
+      const response = await api.post("/chat/sessions", reqBody);
       const payload = response.data;
       return payload?.data || payload;
     } catch (error) {
@@ -130,7 +131,7 @@ export const chatSessionService = {
       const newSess = {
         id: `sess-${Date.now()}`,
         title,
-        connectionId: Number(connectionId),
+        connectionId: connectionId ? Number(connectionId) : 1,
         messageCount: 0,
         createdAt: new Date().toISOString(),
         lastMessageAt: new Date().toISOString(),

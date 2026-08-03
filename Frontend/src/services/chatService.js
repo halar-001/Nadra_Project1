@@ -60,24 +60,27 @@ export const chatService = {
   postChatQuery: async (connectionId, message, sessionId) => {
     const startTime = Date.now();
     
-    // Ensure sessionId is a valid UUID format expected by Spring Boot ChatRequest
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const validSessionId = sessionId && uuidRegex.test(String(sessionId))
       ? String(sessionId)
-      : "00000000-0000-0000-0000-000000000001";
+      : null;
 
     try {
-      const response = await api.post("/chat", {
-        sessionId: validSessionId,
-        connectionId: Number(connectionId),
+      const requestPayload = {
+        connectionId: connectionId ? Number(connectionId) : null,
         message: message.trim(),
-      });
+      };
+      if (validSessionId) {
+        requestPayload.sessionId = validSessionId;
+      }
+      const response = await api.post("/chat", requestPayload);
 
-      const payload = response.data;
-      const data = payload?.data || payload;
+      const resPayload = response.data;
+      const data = resPayload?.data || resPayload;
       const queryResult = data?.queryResult || data?.result || data;
 
       return {
+        sessionId: data.sessionId || null,
         generatedSql: data.generatedSql || data.sql || "SELECT * FROM dual;",
         columns: queryResult?.columns || data?.columns || [],
         rows: queryResult?.rows || data?.rows || [],
