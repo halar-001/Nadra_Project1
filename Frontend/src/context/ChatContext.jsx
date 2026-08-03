@@ -9,12 +9,22 @@ export const MAX_STORED_ROWS = 400; // Policy Rule: Max 400 stored rows in query
 
 export const ChatProvider = ({ children }) => {
   const [sessions, setSessions] = useState([]);
-  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeSessionId, setActiveSessionIdState] = useState(null);
   const [messages, setMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorState, setErrorState] = useState(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Helper setter to sync activeSessionId with localStorage
+  const setActiveSessionId = useCallback((id) => {
+    setActiveSessionIdState(id);
+    if (id) {
+      localStorage.setItem("active_chat_session_id", String(id));
+    } else {
+      localStorage.removeItem("active_chat_session_id");
+    }
+  }, []);
 
   // 1. Load Initial Sessions on Mount
   useEffect(() => {
@@ -23,7 +33,14 @@ export const ChatProvider = ({ children }) => {
         const fetchedSessions = await chatSessionService.fetchSessions();
         if (fetchedSessions && fetchedSessions.length > 0) {
           setSessions(fetchedSessions);
-          setActiveSessionId(fetchedSessions[0].id);
+          const savedActiveId = localStorage.getItem("active_chat_session_id");
+          const foundSaved = fetchedSessions.find((s) => String(s.id) === String(savedActiveId));
+
+          if (savedActiveId && foundSaved) {
+            setActiveSessionId(foundSaved.id);
+          } else {
+            setActiveSessionId(fetchedSessions[0].id);
+          }
         } else {
           // If empty, create default session
           const created = await chatSessionService.createSession("University Students & CGPA Analysis", 1);
@@ -35,7 +52,8 @@ export const ChatProvider = ({ children }) => {
       }
     };
     initSessions();
-  }, []);
+  }, [setActiveSessionId]);
+
 
   // 2. Load Session Messages when activeSessionId changes (Instant 0-Token History Viewing)
   useEffect(() => {
@@ -56,14 +74,37 @@ export const ChatProvider = ({ children }) => {
             }
           }
 
+          const cols = msg.columns || parsedResult?.columns || [];
+          const rowsData = msg.rows || parsedResult?.rows || [];
+          
+          // MOCK VISUALIZATION FOR PHASE 8 TESTING (Remove when backend is ready)
+          let mockVis = null;
+          if (rowsData.length > 0 && cols.length >= 2) {
+            mockVis = {
+              recommendedChart: "BAR",
+              availableCharts: ["BAR", "LINE", "PIE"],
+              config: {
+                title: `Result Analytics`,
+                labels: rowsData.slice(0, 7).map(r => String(r[0] || 'Unknown')),
+                datasets: [
+                  {
+                    label: "Metric",
+                    data: rowsData.slice(0, 7).map(r => Number(r[1]) || Math.floor(Math.random() * 100))
+                  }
+                ]
+              }
+            };
+          }
+
           return {
             ...msg,
             sender: msg.role === "USER" ? "USER" : "AI",
             content: msg.message,
-            columns: msg.columns || parsedResult?.columns || [],
-            rows: msg.rows || parsedResult?.rows || [],
-            rowCount: msg.rowCount ?? parsedResult?.rowCount ?? (parsedResult?.rows?.length || 0),
+            columns: cols,
+            rows: rowsData,
+            rowCount: msg.rowCount ?? parsedResult?.rowCount ?? (rowsData.length || 0),
             executionTimeMs: msg.executionTimeMs || parsedResult?.metadata?.executionTimeMs || 42,
+            visualization: msg.visualization || parsedResult?.visualization || mockVis,
           };
         });
         setMessages(normalized);
@@ -163,6 +204,22 @@ export const ChatProvider = ({ children }) => {
         console.log(`[ChatContext] Truncated query results from ${rawRows.length} to ${MAX_STORED_ROWS} rows for storage efficiency.`);
       }
 
+      // MOCK VISUALIZATION FOR PHASE 8 TESTING (Remove when backend is ready)
+      const mockVisualization = {
+        recommendedChart: "BAR",
+        availableCharts: ["BAR", "LINE", "PIE"],
+        config: {
+          title: `Result Analytics: ${userQuery}`,
+          labels: cappedRows.slice(0, 7).map(r => String(r[0] || 'Unknown')),
+          datasets: [
+            {
+              label: "Metric",
+              data: cappedRows.slice(0, 7).map(r => Number(r[1]) || Math.floor(Math.random() * 100))
+            }
+          ]
+        }
+      };
+
       // 4. Add AI Generated & Executed SQL Message
       addMessageToState({
         sender: "AI",
@@ -175,8 +232,23 @@ export const ChatProvider = ({ children }) => {
         rowCount: result.rowCount ?? rawRows.length,
         model: result.model,
         executionTimeMs: result.executionTimeMs,
+        visualization: result.visualization || (cappedRows.length > 0 && result.columns?.length >= 2 ? mockVisualization : null),
         connectionId,
       });
+
+      // 5. Instantly sync backend-returned session UUID & refresh sessions list
+      if (result.sessionId && String(result.sessionId) !== String(activeSessionId)) {
+        setActiveSessionId(result.sessionId);
+      }
+
+      try {
+        const freshSessions = await chatSessionService.fetchSessions();
+        if (freshSessions && freshSessions.length > 0) {
+          setSessions(freshSessions);
+        }
+      } catch (e) {
+        // ignore background refresh errors
+      }
     } catch (err) {
       console.error("[ChatContext] Chat Execution Error:", err);
       const errMsg = err?.message || "Failed to generate or execute SQL query.";
@@ -198,13 +270,19 @@ export const ChatProvider = ({ children }) => {
   /**
    * Create a new chat session
    */
-  const createNewSession = async (title = "New Chat Session", connectionId = 1) => {
+  const createNewSession = async (title = "New Chat Session", connectionId = null) => {
     try {
       const newSession = await chatSessionService.createSession(title, connectionId);
-      setSessions((prev) => [newSession, ...prev]);
-      setActiveSessionId(newSession.id);
-      setMessages([]);
-      setErrorState(null);
+      if (newSession && newSession.id) {
+        setSessions((prev) => {
+          const exists = prev.some((s) => s.id === newSession.id);
+          return exists ? prev : [newSession, ...prev];
+        });
+        setActiveSessionId(newSession.id);
+        setMessages([]);
+        setErrorState(null);
+        return newSession;
+      }
     } catch (err) {
       console.error("[ChatContext] Failed to create new session:", err);
     }

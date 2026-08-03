@@ -69,7 +69,26 @@ const INITIAL_MOCK_SESSIONS = [
   },
 ];
 
-let localSessionsStore = [...INITIAL_MOCK_SESSIONS];
+const getLocalStore = () => {
+  try {
+    const cached = localStorage.getItem("offline_chat_sessions");
+    if (cached) return JSON.parse(cached);
+  } catch (e) {
+    console.warn("Failed to load cached sessions:", e);
+  }
+  return [...INITIAL_MOCK_SESSIONS];
+};
+
+const saveLocalStore = (store) => {
+  try {
+    localStorage.setItem("offline_chat_sessions", JSON.stringify(store));
+  } catch (e) {
+    console.warn("Failed to save sessions cache:", e);
+  }
+};
+
+let localSessionsStore = getLocalStore();
+
 
 export const chatSessionService = {
   /**
@@ -98,12 +117,13 @@ export const chatSessionService = {
    * Create a new conversation session.
    * Calls POST /api/chat/sessions
    */
-  createSession: async (title = "New Chat Session", connectionId = 1) => {
+  createSession: async (title = "New Chat Session", connectionId) => {
     try {
-      const response = await api.post("/chat/sessions", {
-        title,
-        connectionId: Number(connectionId),
-      });
+      const reqBody = { title };
+      if (connectionId && Number(connectionId) > 0) {
+        reqBody.connectionId = Number(connectionId);
+      }
+      const response = await api.post("/chat/sessions", reqBody);
       const payload = response.data;
       return payload?.data || payload;
     } catch (error) {
@@ -111,13 +131,14 @@ export const chatSessionService = {
       const newSess = {
         id: `sess-${Date.now()}`,
         title,
-        connectionId: Number(connectionId),
+        connectionId: connectionId ? Number(connectionId) : 1,
         messageCount: 0,
         createdAt: new Date().toISOString(),
         lastMessageAt: new Date().toISOString(),
         messages: [],
       };
       localSessionsStore = [newSess, ...localSessionsStore];
+      saveLocalStore(localSessionsStore);
       return newSess;
     }
   },
@@ -136,6 +157,7 @@ export const chatSessionService = {
       localSessionsStore = localSessionsStore.map((s) =>
         s.id === sessionId ? { ...s, title, updatedAt: new Date().toISOString() } : s
       );
+      saveLocalStore(localSessionsStore);
       return { id: sessionId, title };
     }
   },
@@ -151,6 +173,7 @@ export const chatSessionService = {
     } catch (error) {
       console.warn(`[chatSessionService] Offline mode: Deleting session ${sessionId} locally.`, error?.message);
       localSessionsStore = localSessionsStore.filter((s) => s.id !== sessionId);
+      saveLocalStore(localSessionsStore);
       return true;
     }
   },

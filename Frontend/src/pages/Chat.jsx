@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 import { useConnection } from "../context/ConnectionContext";
 import Card from "../components/Card";
+import ChartContainer from "../components/visualization/ChartContainer";
 import {
   CheckCircle2,
   Clock,
@@ -284,6 +285,13 @@ export const Chat = () => {
                       <div className="p-4 sm:p-5 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl font-mono text-xs sm:text-sm border border-slate-200/90 dark:border-slate-700/90 shadow-2xs select-all leading-relaxed overflow-x-auto whitespace-pre-wrap">
                         <code>{renderFormattedSql(m.generatedSql || m.sqlQuery)}</code>
                       </div>
+                    </div>
+                  )}
+
+                  {/* PHASE 8: VISUALIZATION TABULAR & CHART TOGGLE OR DIRECT RENDER */}
+                  {m.visualization && (
+                    <div className="mt-4">
+                      <ChartContainer visualization={m.visualization} />
                     </div>
                   )}
 

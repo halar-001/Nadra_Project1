@@ -68,19 +68,15 @@ export const ConnectionProvider = ({ children }) => {
     try {
       const res = await connectionService.getConnections();
       const raw = res?.data;
-      const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : Array.isArray(res) ? res : [];
+      const list = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : Array.isArray(res) ? res : null;
 
-      if (Array.isArray(list) && list.length > 0) {
+      if (list !== null) {
         setConnections(list);
-        if (!list.some((c) => c.id === selectedConnectionId)) {
+        if (list.length > 0 && !list.some((c) => c.id === selectedConnectionId)) {
           setSelectedConnectionId(list[0].id);
         }
         return;
       }
-      
-      // If backend returns empty connections list, use per-user local/mock connections
-      const localList = getOfflineUserConnections();
-      setConnections(localList.length > 0 ? localList : MOCK_CONNECTIONS);
     } catch (err) {
       // Fallback: Use per-user local storage or mock
       console.warn("Backend connections API error, using local connections.", err?.message);
