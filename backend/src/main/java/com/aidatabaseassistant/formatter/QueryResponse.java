@@ -2,11 +2,13 @@ package com.aidatabaseassistant.formatter;
 
 import java.util.List;
 import java.util.Map;
+import com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse;
 
 public class QueryResponse {
     private List<String> columns;
     private List<List<Object>> rows;
     private Map<String, Object> metadata;
+    private VisualizationResponse visualization;
 
     public QueryResponse() {}
 
@@ -24,4 +26,7 @@ public class QueryResponse {
 
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
+
+    public VisualizationResponse getVisualization() { return visualization; }
+    public void setVisualization(VisualizationResponse visualization) { this.visualization = visualization; }
 }

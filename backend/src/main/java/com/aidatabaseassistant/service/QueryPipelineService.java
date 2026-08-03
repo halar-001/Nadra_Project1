@@ -85,7 +85,11 @@ public class QueryPipelineService {
 
         long executionTimeMs = System.currentTimeMillis() - startTime;
         
-        // 8. Serialize Query Result to JSON
+        // 8. Generate Visualization and Attach to Query Result
+        com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization = responseFormatter.buildVisualization(queryResult);
+        queryResult.setVisualization(visualization);
+
+        // 9. Serialize Query Result to JSON (now includes visualization)
         String queryResultJson = "{}";
         try {
             queryResultJson = objectMapper.writeValueAsString(queryResult);
@@ -95,7 +99,7 @@ public class QueryPipelineService {
         
         Integer rowCount = queryResult.getRows() != null ? queryResult.getRows().size() : 0;
         
-        // 9. Persist Interaction
+        // 10. Persist Interaction
         chatMessageService.saveUserMessage(session, request.getMessage());
         chatMessageService.saveAssistantMessage(
             session, 
@@ -107,8 +111,7 @@ public class QueryPipelineService {
             executionTimeMs
         );
 
-        // 10. Generate Visualization & Return Response
-        com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization = responseFormatter.buildVisualization(queryResult);
+        // 11. Return Response
         return new ChatResponse(session.getId(), safeSql, activeModelName, executionTimeMs, queryResult, visualization);
     }
 }
