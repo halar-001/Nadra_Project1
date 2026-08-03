@@ -74,14 +74,18 @@ export const ChatProvider = ({ children }) => {
             }
           }
 
+          const cols = msg.columns || parsedResult?.columns || [];
+          const rowsData = msg.rows || parsedResult?.rows || [];
+
           return {
             ...msg,
             sender: msg.role === "USER" ? "USER" : "AI",
             content: msg.message,
-            columns: msg.columns || parsedResult?.columns || [],
-            rows: msg.rows || parsedResult?.rows || [],
-            rowCount: msg.rowCount ?? parsedResult?.rowCount ?? (parsedResult?.rows?.length || 0),
+            columns: cols,
+            rows: rowsData,
+            rowCount: msg.rowCount ?? parsedResult?.rowCount ?? (rowsData.length || 0),
             executionTimeMs: msg.executionTimeMs || parsedResult?.metadata?.executionTimeMs || 42,
+            visualization: msg.visualization || parsedResult?.visualization || null,
           };
         });
         setMessages(normalized);
@@ -193,6 +197,7 @@ export const ChatProvider = ({ children }) => {
         rowCount: result.rowCount ?? rawRows.length,
         model: result.model,
         executionTimeMs: result.executionTimeMs,
+        visualization: result.visualization || null,
         connectionId,
       });
 

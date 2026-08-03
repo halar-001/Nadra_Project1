@@ -87,6 +87,7 @@ export const chatService = {
         model: data.model || data.metadata?.model || "llama-3.3-70b-versatile (Groq)",
         rowCount: queryResult?.rowCount ?? queryResult?.metadata?.rowCount ?? data?.rowCount ?? (queryResult?.rows?.length || 0),
         executionTimeMs: data.executionTimeMs ?? data.metadata?.executionTimeMs ?? (Date.now() - startTime),
+        visualization: queryResult?.visualization || data?.visualization || null,
       };
     } catch (error) {
       // If backend returned an HTTP error response (e.g. 500, 400, 404), throw error to display Error Banner
