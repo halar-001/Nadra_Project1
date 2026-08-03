@@ -37,11 +37,36 @@ public class ChatSessionService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        DatabaseConnection connection = connectionRepository.findByIdAndUserId(request.getConnectionId(), user.getId())
-                .orElseThrow(() -> new AccessDeniedException("Database connection not found or unauthorized"));
+        DatabaseConnection connection = null;
+        if (request != null && request.getConnectionId() != null && request.getConnectionId() > 0) {
+            connection = connectionRepository.findByIdAndUserId(request.getConnectionId(), user.getId())
+                    .orElse(null);
+        }
 
-        String title = request.getTitle() != null && !request.getTitle().isBlank() 
-                ? request.getTitle() 
+        if (connection == null) {
+            List<DatabaseConnection> userConns = connectionRepository.findByUserId(user.getId());
+            if (!userConns.isEmpty()) {
+                connection = userConns.get(0);
+            }
+        }
+
+        if (connection == null) {
+            // Auto-create a default connection for user if none exists
+            connection = DatabaseConnection.builder()
+                    .user(user)
+                    .connectionName("Default Database Connection")
+                    .databaseType("MYSQL")
+                    .host("localhost")
+                    .port(3306)
+                    .databaseName("ai_db_assistant_v2")
+                    .username("root")
+                    .encryptedPassword("")
+                    .build();
+            connection = connectionRepository.save(connection);
+        }
+
+        String title = (request != null && request.getTitle() != null && !request.getTitle().isBlank())
+                ? request.getTitle()
                 : "New Chat - " + connection.getDatabaseName();
 
         ChatSession session = new ChatSession(user, connection, title);

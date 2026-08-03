@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotNull;
 
 public class CreateChatSessionRequest {
 
-    @NotNull(message = "Connection ID is required")
     private Long connectionId;
 
     private String title;

@@ -39,6 +39,20 @@ public class ChatMessageService {
         
         session.setMessageCount(session.getMessageCount() + 1);
         session.setLastMessageAt(LocalDateTime.now());
+
+        // Auto-update session title if it currently has a default title
+        if (messageText != null && !messageText.isBlank()) {
+            String currentTitle = session.getTitle();
+            if (currentTitle == null || currentTitle.startsWith("New Chat")) {
+                String trimmed = messageText.trim();
+                String autoTitle = trimmed.length() > 36 
+                        ? trimmed.substring(0, 36).trim() + "..." 
+                        : trimmed;
+                autoTitle = Character.toUpperCase(autoTitle.charAt(0)) + (autoTitle.length() > 1 ? autoTitle.substring(1) : "");
+                session.setTitle(autoTitle);
+            }
+        }
+
         chatSessionRepository.save(session);
     }
 

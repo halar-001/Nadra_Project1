@@ -57,14 +57,6 @@ public class ChatController {
         return ResponseEntity.ok(chatSessionService.getSession(sessionId, authentication.getName()));
     }
 
-    @DeleteMapping("/sessions/{sessionId}")
-    public ResponseEntity<Void> deleteSession(
-            @PathVariable java.util.UUID sessionId,
-            Authentication authentication) {
-        chatSessionService.deleteSession(sessionId, authentication.getName());
-        return ResponseEntity.noContent().build();
-    }
-
     @PutMapping("/sessions/{sessionId}")
     public ResponseEntity<com.aidatabaseassistant.dto.ChatSessionDto> renameSession(
             @PathVariable java.util.UUID sessionId,
@@ -72,6 +64,14 @@ public class ChatController {
             Authentication authentication) {
         String title = body.get("title");
         return ResponseEntity.ok(chatSessionService.renameSession(sessionId, title, authentication.getName()));
+    }
+
+    @DeleteMapping("/sessions/{sessionId}")
+    public ResponseEntity<Void> deleteSession(
+            @PathVariable java.util.UUID sessionId,
+            Authentication authentication) {
+        chatSessionService.deleteSession(sessionId, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/sessions/{sessionId}/messages")

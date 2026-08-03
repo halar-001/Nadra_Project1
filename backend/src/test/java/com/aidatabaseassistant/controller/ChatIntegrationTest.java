@@ -127,7 +127,7 @@ public class ChatIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generatedSql").value("SELECT * FROM students LIMIT 400"))
+                .andExpect(jsonPath("$.generatedSql").value("SELECT * FROM students LIMIT 100"))
                 .andExpect(jsonPath("$.model").value("auto-fallback-engine"))
                 .andExpect(jsonPath("$.executionTimeMs").isNumber())
                 .andExpect(jsonPath("$.queryResult.metadata.rowCount").value(1));

@@ -4,6 +4,7 @@ import com.aidatabaseassistant.formatter.QueryResponse;
 
 public class ChatResponse {
     
+    private java.util.UUID sessionId;
     private String generatedSql;
     private String model;
     private long executionTimeMs;
@@ -12,11 +13,20 @@ public class ChatResponse {
     public ChatResponse() {
     }
 
-    public ChatResponse(String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
+    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
+        this.sessionId = sessionId;
         this.generatedSql = generatedSql;
         this.model = model;
         this.executionTimeMs = executionTimeMs;
         this.queryResult = queryResult;
+    }
+
+    public java.util.UUID getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(java.util.UUID sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getGeneratedSql() {

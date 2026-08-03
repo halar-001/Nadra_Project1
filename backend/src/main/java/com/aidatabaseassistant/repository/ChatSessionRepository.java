@@ -13,4 +13,5 @@ import java.util.UUID;
 public interface ChatSessionRepository extends JpaRepository<ChatSession, UUID> {
     List<ChatSession> findByUserOrderByUpdatedAtDesc(User user);
     Optional<ChatSession> findByIdAndUser(UUID id, User user);
+    List<ChatSession> findByDatabaseConnection(com.aidatabaseassistant.entity.DatabaseConnection databaseConnection);
 }

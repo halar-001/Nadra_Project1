@@ -22,11 +22,15 @@ public class ConnectionService {
     private final DatabaseConnectionRepository connectionRepository;
     private final UserRepository userRepository;
     private final EncryptionService encryptionService;
+    private final com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository;
+    private final com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository;
 
-    public ConnectionService(DatabaseConnectionRepository connectionRepository, UserRepository userRepository, EncryptionService encryptionService) {
+    public ConnectionService(DatabaseConnectionRepository connectionRepository, UserRepository userRepository, EncryptionService encryptionService, com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository, com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository) {
         this.connectionRepository = connectionRepository;
         this.userRepository = userRepository;
         this.encryptionService = encryptionService;
+        this.chatSessionRepository = chatSessionRepository;
+        this.chatMessageRepository = chatMessageRepository;
     }
 
     public TestConnectionResponse testConnection(TestConnectionRequest request) {
@@ -116,6 +120,13 @@ public class ConnectionService {
 
         DatabaseConnection conn = connectionRepository.findByIdAndUserId(id, user.getId())
                 .orElseThrow(() -> new RuntimeException("Database connection not found or access denied"));
+
+        // Delete associated chat messages and sessions to avoid Foreign Key violation
+        List<com.aidatabaseassistant.entity.ChatSession> sessions = chatSessionRepository.findByDatabaseConnection(conn);
+        for (com.aidatabaseassistant.entity.ChatSession s : sessions) {
+            chatMessageRepository.deleteByChatSession(s);
+            chatSessionRepository.delete(s);
+        }
 
         connectionRepository.delete(conn);
     }
