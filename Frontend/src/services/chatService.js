@@ -99,6 +99,10 @@ export const chatService = {
         throw new Error(backendMessage);
       }
 
+      if (error.code === 'ECONNABORTED') {
+        throw new Error("The request timed out. The AI took too long to generate SQL.");
+      }
+
       // ONLY use offline mock generator if Backend Server is completely disconnected (Network Error / Port 8080 down)
       console.warn(`[chatService] Backend server disconnected on port 8080. Serving local Phase 6 execution mock.`, error?.message);
       
