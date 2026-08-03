@@ -21,13 +21,15 @@ public class QueryPipelineService {
     private final ChatSessionService chatSessionService;
     private final ChatMessageService chatMessageService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter;
 
     public QueryPipelineService(SchemaService schemaService, SqlGeneratorService sqlGeneratorService,
                                 SqlValidator sqlValidator, PolicyEngine policyEngine,
                                 QueryExecutorService queryExecutorService,
                                 ChatSessionService chatSessionService,
                                 ChatMessageService chatMessageService,
-                                com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+                                com.fasterxml.jackson.databind.ObjectMapper objectMapper,
+                                com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter) {
         this.schemaService = schemaService;
         this.sqlGeneratorService = sqlGeneratorService;
         this.sqlValidator = sqlValidator;
@@ -36,6 +38,7 @@ public class QueryPipelineService {
         this.chatSessionService = chatSessionService;
         this.chatMessageService = chatMessageService;
         this.objectMapper = objectMapper;
+        this.responseFormatter = responseFormatter;
     }
 
     public ChatResponse processQuery(ChatRequest request, String userEmail) {
@@ -82,7 +85,11 @@ public class QueryPipelineService {
 
         long executionTimeMs = System.currentTimeMillis() - startTime;
         
-        // 8. Serialize Query Result to JSON
+        // 8. Generate Visualization and Attach to Query Result
+        com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization = responseFormatter.buildVisualization(queryResult);
+        queryResult.setVisualization(visualization);
+
+        // 9. Serialize Query Result to JSON (now includes visualization)
         String queryResultJson = "{}";
         try {
             queryResultJson = objectMapper.writeValueAsString(queryResult);
@@ -92,7 +99,7 @@ public class QueryPipelineService {
         
         Integer rowCount = queryResult.getRows() != null ? queryResult.getRows().size() : 0;
         
-        // 9. Persist Interaction
+        // 10. Persist Interaction
         chatMessageService.saveUserMessage(session, request.getMessage());
         chatMessageService.saveAssistantMessage(
             session, 
@@ -104,7 +111,7 @@ public class QueryPipelineService {
             executionTimeMs
         );
 
-        // 10. Return Response
-        return new ChatResponse(session.getId(), safeSql, activeModelName, executionTimeMs, queryResult);
+        // 11. Return Response
+        return new ChatResponse(session.getId(), safeSql, activeModelName, executionTimeMs, queryResult, visualization);
     }
 }
