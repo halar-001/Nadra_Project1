@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4-brightgreen.svg)
 ![React](https://img.shields.io/badge/React-Vite-blue.svg)
-![Status](https://img.shields.io/badge/Status-Phase_4_Complete-success.svg)
+![Status](https://img.shields.io/badge/Status-Phase_8_Complete-success.svg)
 ![Security](https://img.shields.io/badge/Encryption-AES--256--GCM-orange.svg)
 ![Database](https://img.shields.io/badge/Storage-MySQL-blue.svg)
 ![Schema Architecture](https://img.shields.io/badge/Metadata-Universal_JDBC-indigo.svg)
@@ -110,34 +110,122 @@ This critical milestone transforms the backend from simple socket connecting int
 
 ---
 
+### Phase 5: Dynamic Prompt Builder & AI Engine Integration (COMPLETE)
+
+This final critical milestone transforms the backend into a fully autonomous, AI-driven Database Assistant. The system orchestrates multiple cutting-edge Large Language Models (LLMs) to dynamically translate user natural language queries into optimized, executable SQL operations by injecting the extracted architectural schema context.
+
+#### 📅 Day 1: Multi-Provider LLM Architecture & Secure Identity
+- **Vendor-Neutral AI Interfaces**: Created `LLMProvider` API contracts to decouple core business logic from specific AI vendors, allowing for infinite horizontal scalability of future LLMs.
+- **Google Gemini & Groq Adapters**: Engineered dedicated HTTP REST adapters using Spring's `RestTemplate` to integrate Google's Gemini (1.5 Flash) and Groq's high-speed inference (Llama 3) models, managing complex JSON serialization and response extraction natively in Java.
+- **Zero-Trust Key Management**: Configured Spring Boot `application.yml` to inject critical API secrets directly from external environment variables, satisfying strict GitHub Push Protection security rules and preventing hardcoded leakages.
+
+#### 📅 Day 2: AI Orchestration, Failover Logic & Context Prompting
+- **Resilient AI Orchestration**: Developed `LLMService` featuring intelligent, automated failover looping. The service prioritizes the primary LLM (Gemini) and autonomously fails over to the secondary provider (Groq) to ensure 100% uptime against API rate limits and network degradation.
+- **Dynamic Context Injection**: Engineered `SqlGeneratorService` as the core Prompt Builder. It dynamically pulls the user's filtered target schema (Phase 4), synthesizes it into a highly token-optimized text block, and injects it into strict behavioral LLM prompts.
+- **Regex SQL Sanitization**: Implemented robust regex extractors designed to actively strip unpredictable conversational hallucinations and markdown artifacts (e.g., ````sql...````) from the AI's output, isolating mathematically valid, pure SQL strings.
+
+#### 📅 Day 3: REST API Wiring & End-to-End Test Automation
+- **Stateless Chat Controller**: Wired the SQL generation orchestration engines directly into the frontend-facing `/api/chat` REST endpoint, managing inbound natural language queries and safely routing them through the backend security mesh.
+- **Global Error Governance**: Enhanced `GlobalExceptionHandler` to safely intercept LLM timeouts and parsing failures, routing them out to the React frontend as sanitized, user-friendly `ApiResponse<T>` objects without stack trace leakages.
+- **Mockito E2E Automation**: Delivered `SqlGeneratorServiceIntegrationTest` using custom `@TestConfiguration` and `@Primary` mocking to rigorously validate the entire pipeline (Schema Context -> Prompt -> AI Mock Response -> Regex Parse -> SQL Output). The suite completed with **100% BUILD SUCCESS**, officially concluding the Backend Development Lifecycle.
+
+---
+
+### Phase 6: SQL Validation, Security & Query Execution (COMPLETE)
+
+This milestone introduces a mathematically rigorous Abstract Syntax Tree (AST) engine to validate and secure AI-generated SQL. The zero-trust execution pipeline prevents malicious data mutation, strictly blocks unauthorized access to system tables, and enforces safe execution limits against active tenant databases.
+
+#### 📅 Day 1: JSqlParser & Syntax Validation
+- **AST Integration**: Replaced brittle regex patterns by integrating `JSqlParser` (4.7) to build and traverse an Abstract Syntax Tree of the incoming AI-generated SQL.
+- **Strict DML Blocking**: Engineered validations to instantly reject any operations that are not strictly `SELECT` statements (blocking `UPDATE`, `DELETE`, `DROP`).
+- **Multi-Statement Rejection**: Designed safety checks to intercept and block chained SQL injections, throwing custom `SqlValidationException`s.
+
+#### 📅 Day 2: Zero-Trust Policy Engine
+- **RBAC Table Blocking (`PolicyEngine.java`)**: Utilized `TablesNamesFinder` to deeply scan the AST (including nested subqueries and joins) to forcefully reject any attempts to query internal system tables (e.g., `users`, `roles`), returning a 403 Forbidden.
+- **Dynamic Safety Limits**: Protected the JVM from memory exhaustion by actively mutating the AST to forcefully inject or overwrite queries with a maximum `LIMIT 100` constraint before execution.
+
+#### 📅 Day 3: Safe Execution & Result Formatting
+- **Tenant Execution (`QueryExecutorService.java`)**: Executed the validated SQL against the user's specific external database securely, employing a strict 10-second timeout to kill hanging threads.
+- **JSON Result Formatting (`ResultFormatter.java`)**: Engineered an intelligent parser using `ResultSetMetaData` to translate the raw JDBC `ResultSet` into a standardized, dynamic payload (`QueryResponse`) suitable for React Data Grids.
+- **E2E Pipeline Orchestration**: Wired the complete end-to-end flow from schema injection, AI generation, AST validation, and policy enforcement to safe execution and JSON formatting, completing the backend lifecycle.
+
+---
+
+### Phase 7: AI Conversation Management & Chat System (COMPLETE)
+
+This phase elevates the AI from a stateless SQL generator to a stateful conversational assistant. By persisting chat sessions and implementing a sliding-window message retention policy, the AI now understands complex conversational context without blowing up LLM token limits.
+
+#### 📅 Day 1: Session Data Models & Repositories
+- **Conversational Entities**: Designed `ChatSession` (representing a discrete conversation thread) and `ChatMessage` (storing raw SQL, safe SQL, execution time, and AI reasoning) securely linked to specific users and database connections.
+- **Persistence Layer**: Engineered `ChatSessionRepository` and `ChatMessageRepository` with strict tenant-isolation query methods (`findByIdAndUserId`).
+
+#### 📅 Day 2: DTOs & Sliding Window Retention Services
+- **Chat Services**: Developed `ChatSessionService` to manage session lifecycles (creation, renaming, deletion).
+- **Intelligent Memory Limits**: Programmed `ChatMessageService` to enforce a strict **30-message retention policy** (15 user prompts, 15 AI responses) per session. Older messages are automatically evicted, preventing memory exhaustion and optimizing API token costs.
+
+#### 📅 Day 3: Pipeline Integration & REST APIs
+- **Pipeline Orchestration**: Modified `QueryPipelineService` to automatically fetch historical `ChatMessage` logs via the session ID and feed them into `SqlGeneratorService` to preserve contextual continuity for follow-up questions.
+- **Stateful Endpoints**: Updated `ChatController` to expose a complete suite of Session CRUD APIs and message history retrieval, backed by robust Spring Security authorization checks.
+- **Integration Testing**: Restructured integration tests to support UUID session architectures and mocked persistence services to confirm robust zero-error builds.
+
+---
+
+### Phase 8: Advanced Data Visualization & Interactive Charting (COMPLETE)
+
+This capstone phase transforms the application from a raw data-retrieval engine into an intelligent Business Intelligence (BI) dashboard. The backend presentation layer now dynamically profiles SQL results and generates automated interactive chart configurations for the frontend.
+
+#### 📅 Day 1: Presentation Layer & Data Profiling
+- **Strict Presentation DTOs**: Created `ChartConfig` and `VisualizationResponse` models mirroring interactive JSON schemas to completely offload analytical processing from the frontend.
+- **Data Profiler Engine**: Engineered an algorithmic scanner utilizing `ResultSetMetaData` to dynamically inspect incoming SQL results, automatically categorizing unknown output columns into functional types (e.g., Dates, Numerics, Texts, Percentages).
+
+#### 📅 Day 2: Intelligent Chart Recommendation & Analysis
+- **Result Analyzer**: Developed heuristic logic to spot data patterns across the categorized columns, accurately deducing which column should act as the X-Axis label and which as the Y-Axis measure.
+- **Chart Recommendation Engine**: Implemented robust decision trees to autonomously map deduced data patterns to the mathematically optimal visual representation (e.g., Line charts for temporal metrics, Pie charts for distributions, Bar charts for categorizations).
+
+#### 📅 Day 3: Configuration Builder & Pipeline Orchestration
+- **Configuration Builder**: Engineered the final data mapper that extracts precise runtime values from the DB payload and injects them into the designated X/Y coordinate arrays.
+- **Facade Orchestration**: Consolidated all visualization micro-services under a unified `ResponseFormatter` facade, cleanly injecting it directly into the core `QueryPipelineService`.
+- **E2E Result Embedding**: The backend now seamlessly delivers both the raw execution data and the pre-computed BI charting configurations embedded within a single holistic `ChatResponse`.
+
+---
+
 ## 🏗️ System Architecture & Workflow
 
 ```
-                    Chat & Schema Request
-                              │
-                              ▼
+                    Natural Language Query
+                               │
+                               ▼
                 Stateless JWT Security Filter
-                              │
-                              ▼
-                     Connection Manager (Phase 3)
-                              │
-                              ▼
-            Dynamic Tenant-Isolated JDBC Socket
-                              │
-                              ▼
-               Universal Schema Reader (Phase 4)
-                              │
-                              ▼
-            Thread-Safe Schema RAM Cache (0ms)
-                              │
-                              ▼
-          Inverted Vocabulary Keyword Indexer
-                              │
-                              ▼
-         AI Schema Selector + Graph Bridge Finder
-                              │
-                              ▼
-         Ready for AI Natural Language Prompt (Phase 5)
+                               │
+                               ▼
+            Dynamic Tenant-Isolated JDBC Socket (Phase 3)
+                               │
+                               ▼
+           Universal Schema Reader & Cache (Phase 4)
+                               │
+                               ▼
+          AI Schema Selector & Graph Bridge Finder
+                               │
+                               ▼
+          Dynamic Context Injector & Prompt Builder
+                               │
+                               ▼
+        LLM Orchestrator (Gemini Primary / Groq Fallback) (Phase 5)
+                               │
+                               ▼
+          Regex SQL Sanitizer & Executable Extractor
+                               │
+                               ▼
+            JSqlParser AST Security Validation Engine (Phase 6)
+                               │
+                               ▼
+        Zero-Trust Policy Engine (Table Blocking & Safety Limits)
+                               │
+                               ▼
+            JDBC Dynamic Execution with Timeout Guardrails
+                               │
+                               ▼
+         JSON Result Formatting for React Data Grid (Phase 6)
 ```
 
 ---
