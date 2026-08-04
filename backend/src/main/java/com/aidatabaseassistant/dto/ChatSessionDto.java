@@ -3,9 +3,10 @@ package com.aidatabaseassistant.dto;
 import com.aidatabaseassistant.entity.ChatSessionStatus;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class ChatSessionDto {
-    private Long id;
+    private UUID id;
     private Long connectionId;
     private String title;
     private int messageCount;
@@ -15,7 +16,7 @@ public class ChatSessionDto {
     public ChatSessionDto() {
     }
 
-    public ChatSessionDto(Long id, Long connectionId, String title, int messageCount, ChatSessionStatus status, LocalDateTime lastMessageAt) {
+    public ChatSessionDto(UUID id, Long connectionId, String title, int messageCount, ChatSessionStatus status, LocalDateTime lastMessageAt) {
         this.id = id;
         this.connectionId = connectionId;
         this.title = title;
@@ -24,11 +25,11 @@ public class ChatSessionDto {
         this.lastMessageAt = lastMessageAt;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

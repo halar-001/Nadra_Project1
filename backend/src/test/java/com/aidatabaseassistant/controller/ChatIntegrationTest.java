@@ -80,7 +80,7 @@ public class ChatIntegrationTest {
         public com.aidatabaseassistant.service.ChatSessionService dummyChatSessionService() {
             return new com.aidatabaseassistant.service.ChatSessionService(null, null, null, null) {
                 @Override
-                public com.aidatabaseassistant.entity.ChatSession getSessionEntity(Long sessionId, String userEmail) {
+                public com.aidatabaseassistant.entity.ChatSession getSessionEntity(java.util.UUID sessionId, String userEmail) {
                     com.aidatabaseassistant.entity.User user = new com.aidatabaseassistant.entity.User();
                     user.setId(1L);
                     user.setEmail(userEmail);
@@ -120,7 +120,7 @@ public class ChatIntegrationTest {
     @WithMockUser(username = "testuser@nadra.gov.pk")
     public void testGenerateSqlEndpoint() throws Exception {
         ChatRequest request = new ChatRequest();
-        request.setSessionId(1L);
+        request.setSessionId(java.util.UUID.randomUUID());
         request.setMessage("Show all users");
 
         mockMvc.perform(post("/api/chat")
@@ -136,7 +136,7 @@ public class ChatIntegrationTest {
     @Test
     public void testGenerateSqlEndpointWithoutAuth() throws Exception {
         ChatRequest request = new ChatRequest();
-        request.setSessionId(1L);
+        request.setSessionId(java.util.UUID.randomUUID());
         request.setMessage("Show all users");
 
         mockMvc.perform(post("/api/chat")

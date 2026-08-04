@@ -10,15 +10,8 @@ import com.aidatabaseassistant.dto.UpdateProfileRequest;
 import com.aidatabaseassistant.dto.ChangePasswordRequest;
 import com.aidatabaseassistant.service.AuthService;
 import jakarta.validation.Valid;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.aidatabaseassistant.audit.event.AuditEvent;
-import com.aidatabaseassistant.audit.model.EventType;
-import com.aidatabaseassistant.audit.model.Severity;
-import com.aidatabaseassistant.security.UserDetailsImpl;
-import org.springframework.security.core.Authentication;
 
 import java.security.Principal;
 import java.util.Map;
@@ -28,11 +21,9 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final ApplicationEventPublisher eventPublisher;
 
-    public AuthController(AuthService authService, ApplicationEventPublisher eventPublisher) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.eventPublisher = eventPublisher;
     }
 
     @PostMapping("/register")
@@ -57,16 +48,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Object>> logout(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            eventPublisher.publishEvent(new AuditEvent.Builder(this)
-                    .userId(userDetails.getId())
-                    .eventType(EventType.LOGOUT)
-                    .severity(Severity.INFO)
-                    .description("User logged out successfully")
-                    .build());
-        }
+    public ResponseEntity<ApiResponse<Object>> logout() {
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 

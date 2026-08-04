@@ -16,7 +16,7 @@ public class ChartRecommendationService {
     }
 
     public Recommendation recommend(ResultAnalyzer.AnalysisResult analysis) {
-        if (analysis.dataColumnIndex == -1) {
+        if ("UNKNOWN".equals(analysis.pattern) || analysis.dataColumnIndex == -1) {
             return new Recommendation("TABLE", Arrays.asList("TABLE"));
         }
 

@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -134,14 +134,5 @@ public class ChatMessageService {
     @Transactional(readOnly = true)
     public List<ChatMessage> getHistoryForPrompt(ChatSession session) {
         return chatMessageRepository.findByChatSessionOrderByCreatedAtAsc(session);
-    }
-
-    public List<ChatMessage> getHistoryForSession(ChatSession session) {
-        return chatMessageRepository.findByChatSessionOrderByCreatedAtAsc(session);
-    }
-
-    public ChatMessage getMessageById(Long id) {
-        return chatMessageRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Chat message not found"));
     }
 }

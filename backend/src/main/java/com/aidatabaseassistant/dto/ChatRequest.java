@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class ChatRequest {
 
-    private Long sessionId;
+    private java.util.UUID sessionId;
 
     private Long connectionId;
 
@@ -15,22 +15,22 @@ public class ChatRequest {
     public ChatRequest() {
     }
 
-    public ChatRequest(Long sessionId, String message) {
+    public ChatRequest(java.util.UUID sessionId, String message) {
         this.sessionId = sessionId;
         this.message = message;
     }
 
-    public ChatRequest(Long sessionId, Long connectionId, String message) {
+    public ChatRequest(java.util.UUID sessionId, Long connectionId, String message) {
         this.sessionId = sessionId;
         this.connectionId = connectionId;
         this.message = message;
     }
 
-    public Long getSessionId() {
+    public java.util.UUID getSessionId() {
         return sessionId;
     }
 
-    public void setSessionId(Long sessionId) {
+    public void setSessionId(java.util.UUID sessionId) {
         this.sessionId = sessionId;
     }
 

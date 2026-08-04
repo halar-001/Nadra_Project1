@@ -1,21 +1,20 @@
 package com.aidatabaseassistant.dto;
 
 import com.aidatabaseassistant.formatter.QueryResponse;
-import com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse;
 
 public class ChatResponse {
     
-    private Long sessionId;
+    private java.util.UUID sessionId;
     private String generatedSql;
     private String model;
     private long executionTimeMs;
     private QueryResponse queryResult;
-    private VisualizationResponse visualization;
+    private com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(Long sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult, VisualizationResponse visualization) {
+    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult, com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization) {
         this.sessionId = sessionId;
         this.generatedSql = generatedSql;
         this.model = model;
@@ -24,15 +23,15 @@ public class ChatResponse {
         this.visualization = visualization;
     }
 
-    public ChatResponse(Long sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
+    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
         this(sessionId, generatedSql, model, executionTimeMs, queryResult, null);
     }
 
-    public Long getSessionId() {
+    public java.util.UUID getSessionId() {
         return sessionId;
     }
 
-    public void setSessionId(Long sessionId) {
+    public void setSessionId(java.util.UUID sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -68,11 +67,11 @@ public class ChatResponse {
         this.queryResult = queryResult;
     }
 
-    public VisualizationResponse getVisualization() {
+    public com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse getVisualization() {
         return visualization;
     }
 
-    public void setVisualization(VisualizationResponse visualization) {
+    public void setVisualization(com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization) {
         this.visualization = visualization;
     }
 }

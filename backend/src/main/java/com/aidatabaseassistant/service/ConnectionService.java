@@ -6,10 +6,6 @@ import com.aidatabaseassistant.entity.User;
 import com.aidatabaseassistant.repository.DatabaseConnectionRepository;
 import com.aidatabaseassistant.repository.UserRepository;
 import com.aidatabaseassistant.security.EncryptionService;
-import com.aidatabaseassistant.audit.event.AuditEvent;
-import com.aidatabaseassistant.audit.model.EventType;
-import com.aidatabaseassistant.audit.model.Severity;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,15 +24,13 @@ public class ConnectionService {
     private final EncryptionService encryptionService;
     private final com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository;
     private final com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
-    public ConnectionService(DatabaseConnectionRepository connectionRepository, UserRepository userRepository, EncryptionService encryptionService, com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository, com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository, ApplicationEventPublisher eventPublisher) {
+    public ConnectionService(DatabaseConnectionRepository connectionRepository, UserRepository userRepository, EncryptionService encryptionService, com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository, com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository) {
         this.connectionRepository = connectionRepository;
         this.userRepository = userRepository;
         this.encryptionService = encryptionService;
         this.chatSessionRepository = chatSessionRepository;
         this.chatMessageRepository = chatMessageRepository;
-        this.eventPublisher = eventPublisher;
     }
 
     public TestConnectionResponse testConnection(TestConnectionRequest request) {
@@ -45,11 +39,6 @@ public class ConnectionService {
             DriverManager.setLoginTimeout(5); // 5-second timeout for testing
             try (Connection conn = DriverManager.getConnection(url, request.getUsername(), request.getPassword())) {
                 if (conn.isValid(2)) {
-                    eventPublisher.publishEvent(new AuditEvent.Builder(this)
-                            .eventType(EventType.CONNECTION_TESTED)
-                            .severity(Severity.INFO)
-                            .description("Tested connection to " + request.getDatabaseType() + " at " + request.getHost())
-                            .build());
                     return TestConnectionResponse.ok();
                 }
                 return TestConnectionResponse.fail("Connection opened but failed validity test.");
@@ -100,15 +89,6 @@ public class ConnectionService {
                 .build();
 
         DatabaseConnection saved = connectionRepository.save(conn);
-        
-        eventPublisher.publishEvent(new AuditEvent.Builder(this)
-                .userId(user.getId())
-                .connectionId(saved.getId())
-                .eventType(EventType.CONNECTION_CREATED)
-                .severity(Severity.INFO)
-                .description("Connection created: " + request.getConnectionName())
-                .build());
-                
         return ConnectionResponse.fromEntity(saved);
     }
 
@@ -132,15 +112,6 @@ public class ConnectionService {
         conn.setEncryptedPassword(encryptionService.encrypt(request.getPassword()));
 
         DatabaseConnection updated = connectionRepository.save(conn);
-        
-        eventPublisher.publishEvent(new AuditEvent.Builder(this)
-                .userId(user.getId())
-                .connectionId(updated.getId())
-                .eventType(EventType.CONNECTION_UPDATED)
-                .severity(Severity.INFO)
-                .description("Connection updated: " + request.getConnectionName())
-                .build());
-                
         return ConnectionResponse.fromEntity(updated);
     }
 
@@ -158,14 +129,6 @@ public class ConnectionService {
         }
 
         connectionRepository.delete(conn);
-        
-        eventPublisher.publishEvent(new AuditEvent.Builder(this)
-                .userId(user.getId())
-                .connectionId(id)
-                .eventType(EventType.CONNECTION_DELETED)
-                .severity(Severity.INFO)
-                .description("Connection deleted: " + conn.getConnectionName())
-                .build());
     }
 
     /**
