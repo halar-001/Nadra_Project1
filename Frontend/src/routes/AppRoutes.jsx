@@ -8,6 +8,7 @@ import Connections from "../pages/Connections";
 import SchemaExplorer from "../pages/SchemaExplorer";
 import Profile from "../pages/Profile";
 import Admin from "../pages/Admin";
+import AuditLogs from "../pages/AuditLogs";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../layouts/ProtectedRoute";
 import ErrorBoundary from "../components/ErrorBoundary";
@@ -66,6 +67,14 @@ export const AppRoutes = () => {
             element={
               <ProtectedRoute requiredRole="ADMIN">
                 <Admin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <ProtectedRoute requiredRole="ADMIN">
+                <AuditLogs />
               </ProtectedRoute>
             }
           />
