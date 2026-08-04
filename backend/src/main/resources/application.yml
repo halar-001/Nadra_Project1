@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: ai-database-assistant
+  profiles:
+    active: local
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ai_db_assistant_v3?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: root
+    password: ""
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: ${DB_DIALECT:org.hibernate.dialect.MySQLDialect}
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:dummy@gmail.com}
+    password: ${MAIL_PASSWORD:dummy}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:thisisaverysecuresecretkeyforjwtauthenticationthatisverylong12345}
+    expiration: 86400000 # 24 hours
+  encryption:
+    secret: ${ENCRYPTION_SECRET:aidatabaseassistantsupersecureencryptionsecretkey256bitval1234567890}
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY:dummy}
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent}
+
+groq:
+  api:
+    key: ${GROQ_API_KEY:dummy}
+    url: ${GROQ_API_URL:https://api.groq.com/openai/v1/chat/completions}
