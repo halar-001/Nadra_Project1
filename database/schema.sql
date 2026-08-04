@@ -71,26 +71,3 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
 );
-
--- 7. Audit Logs Table (Security Audits)
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NULL,
-    action VARCHAR(100) NOT NULL,
-    details TEXT NOT NULL,
-    ip_address VARCHAR(50) NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- 8. System Performance Metrics Table
-CREATE TABLE IF NOT EXISTS system_metrics (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    endpoint VARCHAR(255) NOT NULL,
-    method VARCHAR(10) NOT NULL,
-    status_code INT NOT NULL,
-    response_time_ms INT NOT NULL,
-    user_id BIGINT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
