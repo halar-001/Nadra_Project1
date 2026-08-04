@@ -1,4 +1,4 @@
-package com.aidatabaseassistant.audit.model;
+package com.aidatabaseassistant.audit.enums;
 
 public enum Severity {
     INFO,

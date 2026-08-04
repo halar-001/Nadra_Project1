@@ -1,51 +1,67 @@
 package com.aidatabaseassistant.audit.controller;
 
+import com.aidatabaseassistant.audit.dto.AuditLogDto;
 import com.aidatabaseassistant.audit.entity.AuditLog;
-import com.aidatabaseassistant.audit.model.EventType;
-import com.aidatabaseassistant.audit.model.Severity;
-import com.aidatabaseassistant.audit.service.AuditService;
-import com.aidatabaseassistant.dto.ApiResponse;
-import org.springframework.http.ResponseEntity;
+import com.aidatabaseassistant.audit.enums.AuditEventType;
+import com.aidatabaseassistant.audit.enums.Severity;
+import com.aidatabaseassistant.audit.repository.AuditLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/audit")
+@PreAuthorize("hasRole('ADMIN')")
 public class AuditController {
 
-    private final AuditService auditService;
+    private final AuditLogRepository auditLogRepository;
 
-    public AuditController(AuditService auditService) {
-        this.auditService = auditService;
+    public AuditController(AuditLogRepository auditLogRepository) {
+        this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<AuditLog>>> getAllAuditLogs() {
-        List<AuditLog> logs = auditService.getAllLogs();
-        return ResponseEntity.ok(new ApiResponse<>(true, "Audit logs retrieved successfully", logs));
+    public Page<AuditLogDto> getAuditLogs(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Severity severity,
+            @RequestParam(required = false) AuditEventType eventType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Page<AuditLog> logs = auditLogRepository.findFilteredAuditLogs(
+                userId,
+                severity,
+                eventType,
+                dateFrom,
+                dateTo,
+                PageRequest.of(page, size, Sort.by("createdAt").descending())
+        );
+
+        return logs.map(this::mapToDto);
     }
 
-    @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == principal.id")
-    public ResponseEntity<ApiResponse<List<AuditLog>>> getLogsByUser(@PathVariable Long userId) {
-        List<AuditLog> logs = auditService.getLogsByUser(userId);
-        return ResponseEntity.ok(new ApiResponse<>(true, "User audit logs retrieved successfully", logs));
-    }
-
-    @GetMapping("/severity/{severity}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<AuditLog>>> getLogsBySeverity(@PathVariable Severity severity) {
-        List<AuditLog> logs = auditService.getLogsBySeverity(severity);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Severity audit logs retrieved successfully", logs));
-    }
-
-    @GetMapping("/event/{eventType}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<AuditLog>>> getLogsByEventType(@PathVariable EventType eventType) {
-        List<AuditLog> logs = auditService.getLogsByEventType(eventType);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Event audit logs retrieved successfully", logs));
+    private AuditLogDto mapToDto(AuditLog log) {
+        return AuditLogDto.builder()
+                .id(log.getId())
+                .userId(log.getUserId())
+                .connectionId(log.getConnectionId())
+                .chatSessionId(log.getChatSessionId())
+                .eventType(log.getEventType())
+                .severity(log.getSeverity())
+                .description(log.getDescription())
+                .provider(log.getProvider())
+                .executionTimeMs(log.getExecutionTimeMs())
+                .createdAt(log.getCreatedAt())
+                .build();
     }
 }

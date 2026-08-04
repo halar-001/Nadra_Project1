@@ -78,7 +78,7 @@ public class ChatIntegrationTest {
         @Bean
         @Primary
         public com.aidatabaseassistant.service.ChatSessionService dummyChatSessionService() {
-            return new com.aidatabaseassistant.service.ChatSessionService(null, null, null, null) {
+            return new com.aidatabaseassistant.service.ChatSessionService(null, null, null, null, null) {
                 @Override
                 public com.aidatabaseassistant.entity.ChatSession getSessionEntity(java.util.UUID sessionId, String userEmail) {
                     com.aidatabaseassistant.entity.User user = new com.aidatabaseassistant.entity.User();

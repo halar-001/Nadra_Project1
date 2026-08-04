@@ -1,14 +1,14 @@
 package com.aidatabaseassistant.report.service;
 
-import com.aidatabaseassistant.audit.event.AuditEvent;
-import com.aidatabaseassistant.audit.model.EventType;
-import com.aidatabaseassistant.audit.model.Severity;
+import com.aidatabaseassistant.audit.service.AuditFacade;
+import com.aidatabaseassistant.audit.enums.AuditEventType;
+import com.aidatabaseassistant.audit.enums.Severity;
 import com.aidatabaseassistant.report.dto.ReportDto;
 import com.aidatabaseassistant.report.entity.ReportHistory;
 import com.aidatabaseassistant.report.exporter.CsvExporter;
 import com.aidatabaseassistant.report.exporter.PdfExporter;
 import com.aidatabaseassistant.report.repository.ReportHistoryRepository;
-import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,15 +21,15 @@ public class ReportService {
     private final PdfExporter pdfExporter;
     private final CsvExporter csvExporter;
     private final ReportHistoryRepository reportHistoryRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AuditFacade auditFacade;
 
     public ReportService(PdfExporter pdfExporter, CsvExporter csvExporter,
                          ReportHistoryRepository reportHistoryRepository,
-                         ApplicationEventPublisher eventPublisher) {
+                         AuditFacade auditFacade) {
         this.pdfExporter = pdfExporter;
         this.csvExporter = csvExporter;
         this.reportHistoryRepository = reportHistoryRepository;
-        this.eventPublisher = eventPublisher;
+        this.auditFacade = auditFacade;
     }
 
     public byte[] exportPdf(ReportDto reportDto, Long userId) {
@@ -67,13 +67,8 @@ public class ReportService {
         history.setFileData(fileData);
         reportHistoryRepository.save(history);
 
-        // Publish Audit Event
-        EventType eventType = "PDF_EXPORT".equals(exportFormat) ? EventType.PDF_EXPORT : EventType.CSV_EXPORT;
-        eventPublisher.publishEvent(new AuditEvent.Builder(this)
-                .userId(userId)
-                .eventType(eventType)
-                .severity(Severity.INFO)
-                .description("Exported report as " + exportFormat)
-                .build());
+        // Log Audit Event
+        AuditEventType eventType = "PDF_EXPORT".equals(exportFormat) ? AuditEventType.PDF_EXPORT : AuditEventType.CSV_EXPORT;
+        auditFacade.logReportExported(userId, eventType);
     }
 }

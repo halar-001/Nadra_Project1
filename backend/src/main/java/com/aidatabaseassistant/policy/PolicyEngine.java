@@ -9,8 +9,21 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.stereotype.Component;
+import com.aidatabaseassistant.audit.service.AuditFacade;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 @Component
 public class PolicyEngine {
+
+    private final AuditFacade auditFacade;
+
+    public PolicyEngine(AuditFacade auditFacade) {
+        this.auditFacade = auditFacade;
+    }
 
     // Infrastructure system tables that should NEVER be queried across connections
     private static final Set<String> BLOCKED_TABLES = Set.of(
@@ -26,7 +39,7 @@ public class PolicyEngine {
      * @return The policy-modified SQL string ready for execution
      * @throws PolicyViolationException if a forbidden table is queried
      */
-    public String enforcePolicies(Select select) {
+    public String enforcePolicies(Select select, Long userId, UUID chatSessionId, Long connectionId) {
         // 1. Enforce Table Blocking Policy
         TablesNamesFinder tablesNamesFinder = new TablesNamesFinder();
         List<String> queriedTables = tablesNamesFinder.getTableList((net.sf.jsqlparser.statement.Statement) select);
@@ -35,7 +48,9 @@ public class PolicyEngine {
             // Remove backticks/quotes if present and convert to lowercase for checking
             String normalizedTable = table.replaceAll("`|\"|'", "").toLowerCase();
             if (BLOCKED_TABLES.contains(normalizedTable)) {
-                throw new PolicyViolationException("Access to system table '" + normalizedTable + "' is strictly forbidden by policy.");
+                String reason = "Access to system table '" + normalizedTable + "' is strictly forbidden by policy.";
+                auditFacade.logPolicyViolation(userId, chatSessionId, connectionId, reason);
+                throw new PolicyViolationException(reason);
             }
         }
 

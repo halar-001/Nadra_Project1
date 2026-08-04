@@ -22,8 +22,8 @@ public class ConnectionController {
     }
 
     @PostMapping("/test")
-    public ResponseEntity<TestConnectionResponse> testConnection(@Valid @RequestBody TestConnectionRequest request) {
-        TestConnectionResponse response = connectionService.testConnection(request);
+    public ResponseEntity<TestConnectionResponse> testConnection(Principal principal, @Valid @RequestBody TestConnectionRequest request) {
+        TestConnectionResponse response = connectionService.testConnection(principal != null ? principal.getName() : null, request);
         return ResponseEntity.ok(response);
     }
 

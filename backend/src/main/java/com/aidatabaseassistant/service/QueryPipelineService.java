@@ -9,6 +9,7 @@ import com.aidatabaseassistant.policy.PolicyEngine;
 import com.aidatabaseassistant.validation.SqlValidator;
 import net.sf.jsqlparser.statement.select.Select;
 import org.springframework.stereotype.Service;
+import com.aidatabaseassistant.audit.service.AuditFacade;
 
 @Service
 public class QueryPipelineService {
@@ -22,6 +23,7 @@ public class QueryPipelineService {
     private final ChatMessageService chatMessageService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private final com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter;
+    private final AuditFacade auditFacade;
 
     public QueryPipelineService(SchemaService schemaService, SqlGeneratorService sqlGeneratorService,
                                 SqlValidator sqlValidator, PolicyEngine policyEngine,
@@ -29,7 +31,8 @@ public class QueryPipelineService {
                                 ChatSessionService chatSessionService,
                                 ChatMessageService chatMessageService,
                                 com.fasterxml.jackson.databind.ObjectMapper objectMapper,
-                                com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter) {
+                                com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter,
+                                AuditFacade auditFacade) {
         this.schemaService = schemaService;
         this.sqlGeneratorService = sqlGeneratorService;
         this.sqlValidator = sqlValidator;
@@ -39,6 +42,7 @@ public class QueryPipelineService {
         this.chatMessageService = chatMessageService;
         this.objectMapper = objectMapper;
         this.responseFormatter = responseFormatter;
+        this.auditFacade = auditFacade;
     }
 
     public ChatResponse processQuery(ChatRequest request, String userEmail) {
@@ -78,7 +82,7 @@ public class QueryPipelineService {
         Select selectStatement = sqlValidator.validateAndParse(rawSql);
 
         // 6. Enforce Policies & Inject Limits
-        String safeSql = policyEngine.enforcePolicies(selectStatement);
+        String safeSql = policyEngine.enforcePolicies(selectStatement, session.getUser().getId(), session.getId(), connectionId);
 
         // 7. Execute Query & Format Response
         QueryResponse queryResult = queryExecutorService.executeQuery(connectionId, userEmail, safeSql);
@@ -111,7 +115,10 @@ public class QueryPipelineService {
             executionTimeMs
         );
 
-        // 11. Return Response
+        // 11. Log Success
+        auditFacade.logQueryExecuted(session.getUser().getId(), session.getId(), connectionId, activeModelName, (int) executionTimeMs);
+
+        // 12. Return Response
         return new ChatResponse(session.getId(), safeSql, activeModelName, executionTimeMs, queryResult, visualization);
     }
 }

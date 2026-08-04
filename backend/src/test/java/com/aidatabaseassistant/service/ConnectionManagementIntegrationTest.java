@@ -59,13 +59,13 @@ public class ConnectionManagementIntegrationTest {
     public void testLiveJdbcConnectionValidation() {
         // Test 1: Valid connection using running local H2 instance
         TestConnectionRequest validReq = new TestConnectionRequest("H2", "mem", 3306, "test_conn_db", "sa", "sa");
-        TestConnectionResponse validResp = connectionService.testConnection(validReq);
+        TestConnectionResponse validResp = connectionService.testConnection(ADMIN_1, validReq);
         Assertions.assertTrue(validResp.isSuccess(), "Expected H2 test connection to succeed");
         Assertions.assertNull(validResp.getMessage());
 
         // Test 2: Invalid connection (unreachable host/port)
         TestConnectionRequest invalidReq = new TestConnectionRequest("MYSQL", "256.256.256.256", 1111, "non_existent_db", "user", "pass");
-        TestConnectionResponse invalidResp = connectionService.testConnection(invalidReq);
+        TestConnectionResponse invalidResp = connectionService.testConnection(ADMIN_1, invalidReq);
         Assertions.assertFalse(invalidResp.isSuccess(), "Expected invalid host test connection to fail");
         Assertions.assertNotNull(invalidResp.getMessage());
     }

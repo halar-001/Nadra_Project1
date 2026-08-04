@@ -135,4 +135,9 @@ public class ChatMessageService {
     public List<ChatMessage> getHistoryForPrompt(ChatSession session) {
         return chatMessageRepository.findByChatSessionOrderByCreatedAtAsc(session);
     }
+
+    @Transactional(readOnly = true)
+    public ChatMessage getMessageById(UUID id) {
+        return chatMessageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
+    }
 }

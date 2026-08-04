@@ -90,7 +90,7 @@ public class ReportController {
     }
 
     @GetMapping("/query/{id}")
-    public ResponseEntity<ApiResponse<ReportDto>> getReportForQuery(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<ReportDto>> getReportForQuery(@PathVariable UUID id) {
         try {
             // Note: In a real system, verify the user owns the message via session
             ChatMessage message = chatMessageService.getMessageById(id);

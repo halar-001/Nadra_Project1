@@ -1,54 +1,27 @@
-package com.aidatabaseassistant.audit.entity;
+package com.aidatabaseassistant.audit.dto;
 
 import com.aidatabaseassistant.audit.enums.AuditEventType;
 import com.aidatabaseassistant.audit.enums.Severity;
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
+import com.aidatabaseassistant.audit.enums.Severity;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "audit_logs")
-public class AuditLog {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class AuditLogDto {
     private Long id;
-
-    @Column(name = "user_id")
     private Long userId;
-
-    @Column(name = "connection_id")
     private Long connectionId;
-
-    @Column(name = "chat_session_id")
     private UUID chatSessionId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false, length = 100)
     private AuditEventType eventType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "severity", nullable = false, length = 20)
     private Severity severity;
-
-    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
-
-    @Column(name = "provider", length = 50)
     private String provider;
-
-    @Column(name = "execution_time_ms")
     private Integer executionTimeMs;
-
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public AuditLog() {}
+    public AuditLogDto() {}
 
-    public AuditLog(Long id, Long userId, Long connectionId, UUID chatSessionId, AuditEventType eventType, Severity severity, String description, String provider, Integer executionTimeMs, LocalDateTime createdAt) {
+    public AuditLogDto(Long id, Long userId, Long connectionId, UUID chatSessionId, AuditEventType eventType, Severity severity, String description, String provider, Integer executionTimeMs, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
         this.connectionId = connectionId;
@@ -109,8 +82,8 @@ public class AuditLog {
         public Builder executionTimeMs(Integer executionTimeMs) { this.executionTimeMs = executionTimeMs; return this; }
         public Builder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
 
-        public AuditLog build() {
-            return new AuditLog(id, userId, connectionId, chatSessionId, eventType, severity, description, provider, executionTimeMs, createdAt);
+        public AuditLogDto build() {
+            return new AuditLogDto(id, userId, connectionId, chatSessionId, eventType, severity, description, provider, executionTimeMs, createdAt);
         }
     }
 }

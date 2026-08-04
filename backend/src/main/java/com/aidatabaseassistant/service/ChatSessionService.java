@@ -12,6 +12,7 @@ import com.aidatabaseassistant.repository.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.aidatabaseassistant.audit.service.AuditFacade;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,12 +25,14 @@ public class ChatSessionService {
     private final ChatMessageRepository chatMessageRepository;
     private final DatabaseConnectionRepository connectionRepository;
     private final UserRepository userRepository;
+    private final AuditFacade auditFacade;
 
-    public ChatSessionService(ChatSessionRepository chatSessionRepository, ChatMessageRepository chatMessageRepository, DatabaseConnectionRepository connectionRepository, UserRepository userRepository) {
+    public ChatSessionService(ChatSessionRepository chatSessionRepository, ChatMessageRepository chatMessageRepository, DatabaseConnectionRepository connectionRepository, UserRepository userRepository, AuditFacade auditFacade) {
         this.chatSessionRepository = chatSessionRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.connectionRepository = connectionRepository;
         this.userRepository = userRepository;
+        this.auditFacade = auditFacade;
     }
 
     @Transactional
@@ -71,6 +74,7 @@ public class ChatSessionService {
 
         ChatSession session = new ChatSession(user, connection, title);
         session = chatSessionRepository.save(session);
+        auditFacade.logChatCreated(user.getId(), session.getId(), connection.getId());
 
         return mapToDto(session);
     }
@@ -105,6 +109,7 @@ public class ChatSessionService {
         ChatSession session = getSessionEntity(sessionId, userEmail);
         session.setTitle(newTitle);
         session = chatSessionRepository.save(session);
+        auditFacade.logChatRenamed(session.getUser().getId(), session.getId());
         return mapToDto(session);
     }
 
@@ -115,6 +120,7 @@ public class ChatSessionService {
         chatMessageRepository.deleteByChatSession(session);
         // Delete session
         chatSessionRepository.delete(session);
+        auditFacade.logChatDeleted(session.getUser().getId(), sessionId);
     }
 
     private ChatSessionDto mapToDto(ChatSession session) {
