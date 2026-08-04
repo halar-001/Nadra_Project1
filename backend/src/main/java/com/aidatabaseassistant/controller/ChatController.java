@@ -52,14 +52,14 @@ public class ChatController {
 
     @GetMapping("/sessions/{sessionId}")
     public ResponseEntity<com.aidatabaseassistant.dto.ChatSessionDto> getSession(
-            @PathVariable java.util.UUID sessionId,
+            @PathVariable Long sessionId,
             Authentication authentication) {
         return ResponseEntity.ok(chatSessionService.getSession(sessionId, authentication.getName()));
     }
 
     @PutMapping("/sessions/{sessionId}")
     public ResponseEntity<com.aidatabaseassistant.dto.ChatSessionDto> renameSession(
-            @PathVariable java.util.UUID sessionId,
+            @PathVariable Long sessionId,
             @RequestBody java.util.Map<String, String> body,
             Authentication authentication) {
         String title = body.get("title");
@@ -68,7 +68,7 @@ public class ChatController {
 
     @DeleteMapping("/sessions/{sessionId}")
     public ResponseEntity<Void> deleteSession(
-            @PathVariable java.util.UUID sessionId,
+            @PathVariable Long sessionId,
             Authentication authentication) {
         chatSessionService.deleteSession(sessionId, authentication.getName());
         return ResponseEntity.noContent().build();
@@ -76,7 +76,7 @@ public class ChatController {
 
     @GetMapping("/sessions/{sessionId}/messages")
     public ResponseEntity<java.util.List<com.aidatabaseassistant.dto.ChatMessageDto>> getSessionMessages(
-            @PathVariable java.util.UUID sessionId,
+            @PathVariable Long sessionId,
             Authentication authentication) {
         // Fetch session first to verify ownership
         com.aidatabaseassistant.entity.ChatSession session = chatSessionService.getSessionEntity(sessionId, authentication.getName());

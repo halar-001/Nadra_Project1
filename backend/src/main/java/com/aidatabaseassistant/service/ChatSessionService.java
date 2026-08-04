@@ -87,21 +87,20 @@ public class ChatSessionService {
     }
 
     @Transactional(readOnly = true)
-    public ChatSession getSessionEntity(UUID sessionId, String userEmail) {
+    public ChatSession getSessionEntity(Long id, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return chatSessionRepository.findByIdAndUser(sessionId, user)
-                .orElseThrow(() -> new AccessDeniedException("Chat session not found or unauthorized"));
+        return chatSessionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Chat session not found"));
     }
 
     @Transactional(readOnly = true)
-    public ChatSessionDto getSession(UUID sessionId, String userEmail) {
-        return mapToDto(getSessionEntity(sessionId, userEmail));
+    public ChatSessionDto getSession(Long id, String userEmail) {
+        ChatSession session = getSessionEntity(id, userEmail);
+        return mapToDto(session);
     }
 
-    @Transactional
-    public ChatSessionDto renameSession(UUID sessionId, String newTitle, String userEmail) {
+    public ChatSessionDto renameSession(Long sessionId, String newTitle, String userEmail) {
         ChatSession session = getSessionEntity(sessionId, userEmail);
         session.setTitle(newTitle);
         session = chatSessionRepository.save(session);
@@ -109,8 +108,8 @@ public class ChatSessionService {
     }
 
     @Transactional
-    public void deleteSession(UUID sessionId, String userEmail) {
-        ChatSession session = getSessionEntity(sessionId, userEmail);
+    public void deleteSession(Long id, String userEmail) {
+        ChatSession session = getSessionEntity(id, userEmail);
         // Delete all messages first
         chatMessageRepository.deleteByChatSession(session);
         // Delete session

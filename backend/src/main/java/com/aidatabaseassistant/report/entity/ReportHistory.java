@@ -11,8 +11,8 @@ import java.util.UUID;
 public class ReportHistory {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -30,6 +30,10 @@ public class ReportHistory {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Lob
+    @Column(name = "file_data", columnDefinition = "LONGBLOB")
+    private byte[] fileData;
+
     public ReportHistory() {}
 
     public ReportHistory(Long userId, String reportType, String exportFormat, Long fileSize) {
@@ -39,8 +43,8 @@ public class ReportHistory {
         this.fileSize = fileSize;
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
     public String getReportType() { return reportType; }
@@ -51,4 +55,7 @@ public class ReportHistory {
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public byte[] getFileData() { return fileData; }
+    public void setFileData(byte[] fileData) { this.fileData = fileData; }
 }

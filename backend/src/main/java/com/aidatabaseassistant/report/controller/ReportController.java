@@ -71,8 +71,26 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.success("Report history retrieved successfully", history));
     }
 
+    @GetMapping("/download/{reportHistoryId}")
+    public ResponseEntity<byte[]> downloadHistoricalReport(@PathVariable Long reportHistoryId, Authentication authentication) {
+        try {
+            Long userId = ((UserDetailsImpl) authentication.getPrincipal()).getId();
+            byte[] reportBytes = reportService.downloadReport(reportHistoryId, userId);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "report_" + reportHistoryId + ".pdf");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(reportBytes);
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(null);
+        }
+    }
+
     @GetMapping("/query/{id}")
-    public ResponseEntity<ApiResponse<ReportDto>> getReportForQuery(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<ReportDto>> getReportForQuery(@PathVariable Long id) {
         try {
             // Note: In a real system, verify the user owns the message via session
             ChatMessage message = chatMessageService.getMessageById(id);
@@ -91,7 +109,7 @@ public class ReportController {
     }
 
     @GetMapping("/chat/{sessionId}")
-    public ResponseEntity<ApiResponse<List<ReportDto>>> getReportsForSession(@PathVariable UUID sessionId) {
+    public ResponseEntity<ApiResponse<List<ReportDto>>> getReportsForSession(@PathVariable Long sessionId) {
         try {
             // Note: In a real system, verify the user owns the session
             List<ChatMessage> messages = chatMessageService.getHistoryForPrompt(new com.aidatabaseassistant.entity.ChatSession(null, null, null)); // Mock or use proper session fetch

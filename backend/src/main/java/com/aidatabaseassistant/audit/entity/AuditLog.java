@@ -23,7 +23,7 @@ public class AuditLog {
     private Long connectionId;
 
     @Column(name = "chat_session_id")
-    private UUID chatSessionId;
+    private Long chatSessionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
@@ -66,8 +66,8 @@ public class AuditLog {
     public Long getConnectionId() { return connectionId; }
     public void setConnectionId(Long connectionId) { this.connectionId = connectionId; }
 
-    public UUID getChatSessionId() { return chatSessionId; }
-    public void setChatSessionId(UUID chatSessionId) { this.chatSessionId = chatSessionId; }
+    public Long getChatSessionId() { return chatSessionId; }
+    public void setChatSessionId(Long chatSessionId) { this.chatSessionId = chatSessionId; }
 
     public EventType getEventType() { return eventType; }
     public void setEventType(EventType eventType) { this.eventType = eventType; }

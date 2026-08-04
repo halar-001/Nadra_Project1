@@ -35,7 +35,7 @@ public class ReportService {
     public byte[] exportPdf(ReportDto reportDto, Long userId) {
         byte[] pdfBytes = pdfExporter.export(reportDto);
         
-        saveHistoryAndLogAudit(userId, "PDF_EXPORT", (long) pdfBytes.length);
+        saveHistoryAndLogAudit(userId, "PDF_EXPORT", (long) pdfBytes.length, pdfBytes);
 
         return pdfBytes;
     }
@@ -43,7 +43,7 @@ public class ReportService {
     public byte[] exportCsv(ReportDto reportDto, Long userId) {
         byte[] csvBytes = csvExporter.export(reportDto);
 
-        saveHistoryAndLogAudit(userId, "CSV_EXPORT", (long) csvBytes.length);
+        saveHistoryAndLogAudit(userId, "CSV_EXPORT", (long) csvBytes.length, csvBytes);
 
         return csvBytes;
     }
@@ -52,9 +52,19 @@ public class ReportService {
         return reportHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    private void saveHistoryAndLogAudit(Long userId, String exportFormat, Long fileSize) {
+    public byte[] downloadReport(Long reportHistoryId, Long userId) {
+        ReportHistory history = reportHistoryRepository.findById(reportHistoryId)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+        if (!history.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to report");
+        }
+        return history.getFileData() != null ? history.getFileData() : new byte[0];
+    }
+
+    private void saveHistoryAndLogAudit(Long userId, String exportFormat, Long fileSize, byte[] fileData) {
         // Save History
         ReportHistory history = new ReportHistory(userId, "QUERY_RESULTS", exportFormat, fileSize);
+        history.setFileData(fileData);
         reportHistoryRepository.save(history);
 
         // Publish Audit Event

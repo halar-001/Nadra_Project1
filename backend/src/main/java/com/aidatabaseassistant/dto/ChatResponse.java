@@ -1,20 +1,21 @@
 package com.aidatabaseassistant.dto;
 
 import com.aidatabaseassistant.formatter.QueryResponse;
+import com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse;
 
 public class ChatResponse {
     
-    private java.util.UUID sessionId;
+    private Long sessionId;
     private String generatedSql;
     private String model;
     private long executionTimeMs;
     private QueryResponse queryResult;
-    private com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization;
+    private VisualizationResponse visualization;
 
     public ChatResponse() {
     }
 
-    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult, com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization) {
+    public ChatResponse(Long sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult, VisualizationResponse visualization) {
         this.sessionId = sessionId;
         this.generatedSql = generatedSql;
         this.model = model;
@@ -23,15 +24,15 @@ public class ChatResponse {
         this.visualization = visualization;
     }
 
-    public ChatResponse(java.util.UUID sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
+    public ChatResponse(Long sessionId, String generatedSql, String model, long executionTimeMs, QueryResponse queryResult) {
         this(sessionId, generatedSql, model, executionTimeMs, queryResult, null);
     }
 
-    public java.util.UUID getSessionId() {
+    public Long getSessionId() {
         return sessionId;
     }
 
-    public void setSessionId(java.util.UUID sessionId) {
+    public void setSessionId(Long sessionId) {
         this.sessionId = sessionId;
     }
 
@@ -67,11 +68,11 @@ public class ChatResponse {
         this.queryResult = queryResult;
     }
 
-    public com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse getVisualization() {
+    public VisualizationResponse getVisualization() {
         return visualization;
     }
 
-    public void setVisualization(com.aidatabaseassistant.formatter.visualization.dto.VisualizationResponse visualization) {
+    public void setVisualization(VisualizationResponse visualization) {
         this.visualization = visualization;
     }
 }

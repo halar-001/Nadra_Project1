@@ -14,7 +14,7 @@ public class ResultAnalyzer {
     public AnalysisResult analyze(QueryResponse queryResponse, Map<Integer, DataProfiler.ColumnProfile> profiles) {
         AnalysisResult result = new AnalysisResult();
         
-        if (profiles.size() < 2) {
+        if (profiles.isEmpty()) {
             return result;
         }
 
@@ -27,16 +27,21 @@ public class ResultAnalyzer {
             }
         }
         
-        // Fallback: if no categorical found, use first column as label, second as data
-        if (result.labelColumnIndex == -1) {
-            result.labelColumnIndex = 0;
-            if (result.dataColumnIndex == 0) {
-                result.dataColumnIndex = 1;
-            }
-        }
+        // Fallback: if no numeric found, we can't chart
         if (result.dataColumnIndex == -1) {
-            // Cannot chart without numeric data
             return result;
+        }
+
+        // Fallback: if no categorical found, use same numeric column for both or 0 and 1
+        if (result.labelColumnIndex == -1) {
+            if (profiles.size() == 1) {
+                result.labelColumnIndex = result.dataColumnIndex;
+            } else {
+                result.labelColumnIndex = 0;
+                if (result.dataColumnIndex == 0) {
+                    result.dataColumnIndex = 1;
+                }
+            }
         }
         
         DataProfiler.ColumnProfile labelProfile = profiles.get(result.labelColumnIndex);

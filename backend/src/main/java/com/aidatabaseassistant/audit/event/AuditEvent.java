@@ -10,7 +10,7 @@ public class AuditEvent extends ApplicationEvent {
 
     private final Long userId;
     private final Long connectionId;
-    private final UUID chatSessionId;
+    private final Long chatSessionId;
     private final EventType eventType;
     private final Severity severity;
     private final String description;
@@ -25,7 +25,7 @@ public class AuditEvent extends ApplicationEvent {
         private Object source;
         private Long userId;
         private Long connectionId;
-        private UUID chatSessionId;
+        private Long chatSessionId;
         private EventType eventType;
         private Severity severity = Severity.INFO;
         private String description;
@@ -41,7 +41,7 @@ public class AuditEvent extends ApplicationEvent {
 
         public Builder userId(Long userId) { this.userId = userId; return this; }
         public Builder connectionId(Long connectionId) { this.connectionId = connectionId; return this; }
-        public Builder chatSessionId(UUID chatSessionId) { this.chatSessionId = chatSessionId; return this; }
+        public Builder chatSessionId(Long chatSessionId) { this.chatSessionId = chatSessionId; return this; }
         public Builder eventType(EventType eventType) { this.eventType = eventType; return this; }
         public Builder severity(Severity severity) { this.severity = severity; return this; }
         public Builder description(String description) { this.description = description; return this; }
@@ -73,7 +73,7 @@ public class AuditEvent extends ApplicationEvent {
 
     public Long getUserId() { return userId; }
     public Long getConnectionId() { return connectionId; }
-    public UUID getChatSessionId() { return chatSessionId; }
+    public Long getChatSessionId() { return chatSessionId; }
     public EventType getEventType() { return eventType; }
     public Severity getSeverity() { return severity; }
     public String getDescription() { return description; }

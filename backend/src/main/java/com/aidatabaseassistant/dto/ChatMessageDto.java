@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class ChatMessageDto {
-    private UUID id;
+    private Long id;
     private ChatRole role;
     private String message;
     private String generatedSql;
@@ -23,7 +23,7 @@ public class ChatMessageDto {
     public ChatMessageDto() {
     }
 
-    public ChatMessageDto(UUID id, ChatRole role, String message, String generatedSql, String validatedSql, String queryResult, Integer rowCount, Long executionTimeMs, LocalDateTime createdAt) {
+    public ChatMessageDto(Long id, ChatRole role, String message, String generatedSql, String validatedSql, String queryResult, Integer rowCount, Long executionTimeMs, LocalDateTime createdAt) {
         this.id = id;
         this.role = role;
         this.message = message;
@@ -35,11 +35,11 @@ public class ChatMessageDto {
         this.createdAt = createdAt;
     }
 
-    public UUID getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

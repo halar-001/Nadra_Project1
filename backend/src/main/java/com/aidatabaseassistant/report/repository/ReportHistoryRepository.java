@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface ReportHistoryRepository extends JpaRepository<ReportHistory, UUID> {
+public interface ReportHistoryRepository extends JpaRepository<ReportHistory, Long> {
     List<ReportHistory> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
