@@ -9,8 +9,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.aidatabaseassistant.audit.event.AuditEvent;
+import com.aidatabaseassistant.audit.model.EventType;
+import com.aidatabaseassistant.audit.model.Severity;
 
 import com.aidatabaseassistant.dto.ChangePasswordRequest;
 import com.aidatabaseassistant.dto.LoginRequest;
@@ -35,12 +40,15 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
+    private final ApplicationEventPublisher eventPublisher;
+    
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.eventPublisher = eventPublisher;
     }
 
     public void register(RegisterRequest request) {
@@ -60,6 +68,13 @@ public class AuthService {
 
         user.getRoles().add(viewerRole);
         userRepository.save(user);
+
+        eventPublisher.publishEvent(new AuditEvent.Builder(this)
+                .userId(user.getId())
+                .eventType(EventType.REGISTRATION)
+                .severity(Severity.INFO)
+                .description("User registered: " + user.getEmail())
+                .build());
     }
 
 
@@ -85,10 +100,19 @@ public class AuthService {
                 .roles(roles)
                 .build();
 
-        return LoginResponse.builder()
+        LoginResponse response = LoginResponse.builder()
                 .token(jwt)
                 .user(userResponse)
                 .build();
+                
+        eventPublisher.publishEvent(new AuditEvent.Builder(this)
+                .userId(userDetails.getId())
+                .eventType(EventType.LOGIN)
+                .severity(Severity.INFO)
+                .description("User logged in successfully")
+                .build());
+                
+        return response;
     }
 
     public UserResponse getUserProfile(String email) {
@@ -121,6 +145,13 @@ public class AuthService {
         user.setEmail(request.getEmail());
         userRepository.save(user);
 
+        eventPublisher.publishEvent(new AuditEvent.Builder(this)
+                .userId(user.getId())
+                .eventType(EventType.PROFILE_UPDATED)
+                .severity(Severity.INFO)
+                .description("User updated profile")
+                .build());
+
         return getUserProfile(user.getEmail());
     }
 
@@ -134,7 +165,12 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        eventPublisher.publishEvent(new AuditEvent.Builder(this)
+                .userId(user.getId())
+                .eventType(EventType.PASSWORD_CHANGED)
+                .severity(Severity.INFO)
+                .description("User changed password")
+                .build());
     }
-
-
 }

@@ -7,7 +7,11 @@ import com.aidatabaseassistant.formatter.QueryResponse;
 import com.aidatabaseassistant.model.schema.DatabaseSchema;
 import com.aidatabaseassistant.policy.PolicyEngine;
 import com.aidatabaseassistant.validation.SqlValidator;
+import com.aidatabaseassistant.audit.event.AuditEvent;
+import com.aidatabaseassistant.audit.model.EventType;
+import com.aidatabaseassistant.audit.model.Severity;
 import net.sf.jsqlparser.statement.select.Select;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,6 +26,7 @@ public class QueryPipelineService {
     private final ChatMessageService chatMessageService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private final com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter;
+    private final ApplicationEventPublisher eventPublisher;
 
     public QueryPipelineService(SchemaService schemaService, SqlGeneratorService sqlGeneratorService,
                                 SqlValidator sqlValidator, PolicyEngine policyEngine,
@@ -29,7 +34,8 @@ public class QueryPipelineService {
                                 ChatSessionService chatSessionService,
                                 ChatMessageService chatMessageService,
                                 com.fasterxml.jackson.databind.ObjectMapper objectMapper,
-                                com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter) {
+                                com.aidatabaseassistant.formatter.ResponseFormatter responseFormatter,
+                                ApplicationEventPublisher eventPublisher) {
         this.schemaService = schemaService;
         this.sqlGeneratorService = sqlGeneratorService;
         this.sqlValidator = sqlValidator;
@@ -39,6 +45,7 @@ public class QueryPipelineService {
         this.chatMessageService = chatMessageService;
         this.objectMapper = objectMapper;
         this.responseFormatter = responseFormatter;
+        this.eventPublisher = eventPublisher;
     }
 
     public ChatResponse processQuery(ChatRequest request, String userEmail) {
@@ -78,7 +85,22 @@ public class QueryPipelineService {
         Select selectStatement = sqlValidator.validateAndParse(rawSql);
 
         // 6. Enforce Policies & Inject Limits
-        String safeSql = policyEngine.enforcePolicies(selectStatement);
+        String safeSql;
+        try {
+            safeSql = policyEngine.enforcePolicies(selectStatement);
+        } catch (com.aidatabaseassistant.policy.PolicyViolationException e) {
+            eventPublisher.publishEvent(new AuditEvent.Builder(this)
+                    .userId(session.getUser() != null ? session.getUser().getId() : null)
+                    .connectionId(connectionId)
+                    .chatSessionId(session.getId())
+                    .eventType(EventType.POLICY_VIOLATION)
+                    .severity(Severity.SECURITY)
+                    .description(e.getMessage())
+                    .generatedSql(rawSql)
+                    .provider(activeModelName)
+                    .build());
+            throw e;
+        }
 
         // 7. Execute Query & Format Response
         QueryResponse queryResult = queryExecutorService.executeQuery(connectionId, userEmail, safeSql);
@@ -111,7 +133,20 @@ public class QueryPipelineService {
             executionTimeMs
         );
 
-        // 11. Return Response
+        // 11. Publish Audit Event
+        eventPublisher.publishEvent(new AuditEvent.Builder(this)
+                .userId(session.getUser() != null ? session.getUser().getId() : null)
+                .connectionId(connectionId)
+                .chatSessionId(session.getId())
+                .eventType(EventType.QUERY_EXECUTED)
+                .severity(Severity.INFO)
+                .description("Executed query via AI")
+                .generatedSql(safeSql)
+                .executionTimeMs(executionTimeMs)
+                .provider(activeModelName)
+                .build());
+
+        // 12. Return Response
         return new ChatResponse(session.getId(), safeSql, activeModelName, executionTimeMs, queryResult, visualization);
     }
 }

@@ -135,4 +135,13 @@ public class ChatMessageService {
     public List<ChatMessage> getHistoryForPrompt(ChatSession session) {
         return chatMessageRepository.findByChatSessionOrderByCreatedAtAsc(session);
     }
+
+    public List<ChatMessage> getHistoryForSession(ChatSession session) {
+        return chatMessageRepository.findByChatSessionOrderByCreatedAtAsc(session);
+    }
+
+    public ChatMessage getMessageById(UUID id) {
+        return chatMessageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Chat message not found"));
+    }
 }
