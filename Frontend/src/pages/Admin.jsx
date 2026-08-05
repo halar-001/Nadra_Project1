@@ -1,25 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ShieldCheck, RotateCw, Search, Terminal, Activity, AlertTriangle } from "lucide-react";
 import Card from "../components/Card";
 import Button from "../components/Button";
+import api from "../services/api";
 
 export const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isReloading, setIsReloading] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
-  const logs = [
-    { id: 1, user: "admin", action: "LOGIN_SUCCESS", details: "Successfully logged in from IP" },
-    { id: 2, user: "System", action: "REFRESH_FAILED", details: "Revoked or invalid refresh token used" },
-    { id: 3, user: "System", action: "REFRESH_FAILED", details: "Revoked or invalid refresh token used" },
-    { id: 4, user: "admin", action: "LOGIN_SUCCESS", details: "Successfully logged in from IP" },
-    { id: 5, user: "admin", action: "CHAT_PROMPT", details: "Session: show me all students with first-nam..., Prompt: show me all students with first-name ali" },
-    { id: 6, user: "admin", action: "LOGIN_SUCCESS", details: "Successfully logged in from IP" },
-    { id: 7, user: "admin", action: "CHAT_PROMPT", details: "Session: Show all users, Prompt: Show all users" },
-  ];
+  const fetchLogs = async () => {
+    setIsLoadingLogs(true);
+    try {
+      const response = await api.get('/audit?size=10');
+      const fetchedLogs = response.data.content || response.data || [];
+      const formattedLogs = fetchedLogs.map(log => ({
+        id: log.id,
+        user: log.userName || (log.userId ? `User ID: ${log.userId}` : "Unauthenticated"),
+        action: log.eventType,
+        details: log.description,
+        timestamp: log.createdAt ? new Date(log.createdAt).toLocaleString() : "--"
+      }));
+      setLogs(formattedLogs);
+    } catch (err) {
+      console.warn("Failed to fetch audit logs", err);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
 
   const handleReload = () => {
     setIsReloading(true);
-    setTimeout(() => setIsReloading(false), 600);
+    fetchLogs().then(() => setTimeout(() => setIsReloading(false), 600));
   };
 
   const filteredLogs = logs.filter(
@@ -142,10 +159,22 @@ export const Admin = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs font-mono">
-              {filteredLogs.map((log) => (
+              {isLoadingLogs ? (
+                <tr>
+                  <td colSpan="4" className="py-4 text-center text-slate-500">
+                    Loading logs...
+                  </td>
+                </tr>
+              ) : filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="py-4 text-center text-slate-500">
+                    No logs found.
+                  </td>
+                </tr>
+              ) : filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="py-3.5 px-4 text-slate-400">
-                    --
+                    {log.timestamp}
                   </td>
                   <td className="py-3.5 px-4 font-bold text-blue-600 dark:text-blue-400">
                     {log.user}

@@ -38,7 +38,7 @@ const AuditTable = ({ logs, loading }) => {
                   {new Date(log.createdAt).toLocaleString()}
                 </td>
                 <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">
-                  {log.userId || 'System'}
+                  {log.userName || log.userId || 'System'}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300 font-mono text-xs">
                   {log.eventType}

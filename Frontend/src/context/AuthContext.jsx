@@ -109,16 +109,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await authService.register({ fullName, email, password });
       
-      // Auto login after successful registration or return response
-      const newUser = data.user || {
-        id: Date.now(),
-        fullName,
-        email,
-        role: "ROLE_VIEWER",
-      };
-      const jwtToken = data.token || "mock-jwt-token-registered";
-      saveAuthData(newUser, jwtToken, true);
-      return { success: true, user: newUser };
+      // Auto login after successful registration
+      return await login(email, password, true);
     } catch (err) {
       if (!err.response) {
         console.warn("Backend server not reached. Simulating viewer registration.");

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useConnection } from "../context/ConnectionContext";
 import { useChat } from "../context/ChatContext";
+import api from "../services/api";
 import {
   Database,
   MessageSquare,
@@ -86,30 +87,66 @@ export const Dashboard = () => {
   useEffect(() => {
     if (!isLiveStreaming) return;
 
-    const mockMessages = [
-      { level: "SUCCESS", module: "EXECUTOR", message: "SQL Query executed successfully (Returned 8 rows in 11ms)" },
-      { level: "INFO", module: "LLM_SERVICE", message: "Prompt tokens processed: 142 | Completion tokens: 68" },
-      { level: "SECURITY", module: "AUDIT", message: "User session heartbeat acknowledged (IP: 192.168.1.45)" },
-      { level: "INFO", module: "CONNECTION_POOL", message: "Keep-alive ping to mysql_prod_db successful (9ms)" },
-      { level: "WARN", module: "RATE_LIMIT", message: "Client query frequency: 12 requests/min (Normal)" },
-    ];
+    let isOffline = false;
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      const timeStr = now.toTimeString().split(" ")[0];
-      const randomMsg = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+    const fetchOrMock = async () => {
+      try {
+        const response = await api.get('/audit?size=5');
+        const fetchedLogs = response.data.content || response.data || [];
+        
+        const formattedLogs = fetchedLogs.map(log => {
+          let level = "INFO";
+          if (log.severity === "ERROR") level = "ERROR";
+          if (log.severity === "WARNING") level = "WARN";
+          if (log.severity === "SECURITY") level = "SECURITY";
+          if (log.severity === "INFO") level = "INFO";
 
-      setLogs((prev) => [
-        ...prev.slice(-30),
-        {
-          id: Date.now(),
-          timestamp: timeStr,
-          level: randomMsg.level,
-          module: randomMsg.module,
-          message: randomMsg.message,
-        },
-      ]);
-    }, 4000);
+          const timeStr = log.createdAt ? new Date(log.createdAt).toTimeString().split(" ")[0] : new Date().toTimeString().split(" ")[0];
+          
+          return {
+            id: log.id,
+            timestamp: timeStr,
+            level: level,
+            module: log.eventType,
+            message: log.description,
+          };
+        }).reverse(); // Reverse so newest is at the bottom
+
+        if (formattedLogs.length > 0) {
+           setLogs(formattedLogs);
+        }
+        isOffline = false;
+      } catch (err) {
+        isOffline = true;
+      }
+
+      if (isOffline) {
+        const mockMessages = [
+          { level: "SUCCESS", module: "EXECUTOR", message: "SQL Query executed successfully (Returned 8 rows in 11ms)" },
+          { level: "INFO", module: "LLM_SERVICE", message: "Prompt tokens processed: 142 | Completion tokens: 68" },
+          { level: "SECURITY", module: "AUDIT", message: "User session heartbeat acknowledged (IP: 192.168.1.45)" },
+          { level: "INFO", module: "CONNECTION_POOL", message: "Keep-alive ping to mysql_prod_db successful (9ms)" },
+          { level: "WARN", module: "RATE_LIMIT", message: "Client query frequency: 12 requests/min (Normal)" },
+        ];
+        const now = new Date();
+        const timeStr = now.toTimeString().split(" ")[0];
+        const randomMsg = mockMessages[Math.floor(Math.random() * mockMessages.length)];
+
+        setLogs((prev) => [
+          ...prev.slice(-30),
+          {
+            id: Date.now(),
+            timestamp: timeStr,
+            level: randomMsg.level,
+            module: randomMsg.module,
+            message: randomMsg.message,
+          },
+        ]);
+      }
+    };
+
+    fetchOrMock();
+    const interval = setInterval(fetchOrMock, 4000);
 
     return () => clearInterval(interval);
   }, [isLiveStreaming]);

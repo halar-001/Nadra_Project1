@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import chatService from "../services/chatService";
 import chatSessionService from "../services/chatSessionService";
+import { useAuth } from "./AuthContext";
 
 const ChatContext = createContext();
 
@@ -8,6 +9,7 @@ export const MAX_MESSAGES_PER_SESSION = 40; // Policy Rule: Max 40 individual me
 export const MAX_STORED_ROWS = 400; // Policy Rule: Max 400 stored rows in query result JSON
 
 export const ChatProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionIdState] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -26,8 +28,14 @@ export const ChatProvider = ({ children }) => {
     }
   }, []);
 
-  // 1. Load Initial Sessions on Mount
+  // 1. Load Initial Sessions on Mount or when Auth State Changes
   useEffect(() => {
+    if (!isAuthenticated) {
+      setSessions([]);
+      setActiveSessionId(null);
+      return;
+    }
+
     const initSessions = async () => {
       try {
         const fetchedSessions = await chatSessionService.fetchSessions();
@@ -52,7 +60,7 @@ export const ChatProvider = ({ children }) => {
       }
     };
     initSessions();
-  }, [setActiveSessionId]);
+  }, [setActiveSessionId, isAuthenticated]);
 
 
   // 2. Load Session Messages when activeSessionId changes (Instant 0-Token History Viewing)
