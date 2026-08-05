@@ -78,12 +78,18 @@ export const ConnectionProvider = ({ children }) => {
         return;
       }
     } catch (err) {
-      // Fallback: Use per-user local storage or mock
-      console.warn("Backend connections API error, using local connections.", err?.message);
-      const localList = getOfflineUserConnections();
-      setConnections(localList.length > 0 ? localList : MOCK_CONNECTIONS);
-      if (localList.length > 0 && !localList.some((c) => c.id === selectedConnectionId)) {
-        setSelectedConnectionId(localList[0].id);
+      if (!err.response) {
+        // Backend is offline (network error) -> Fallback to per-user local storage or mock
+        console.warn("Backend API offline, using local connections.", err?.message);
+        const localList = getOfflineUserConnections();
+        setConnections(localList.length > 0 ? localList : MOCK_CONNECTIONS);
+        if (localList.length > 0 && !localList.some((c) => c.id === selectedConnectionId)) {
+          setSelectedConnectionId(localList[0].id);
+        }
+      } else {
+        // Backend is online but returned an error (e.g. 401)
+        console.warn("Backend connections API returned an error.", err?.response?.status, err?.message);
+        setConnections([]);
       }
     } finally {
       setIsLoading(false);
