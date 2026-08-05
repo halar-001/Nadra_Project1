@@ -5,6 +5,7 @@ import com.aidatabaseassistant.audit.entity.AuditLog;
 import com.aidatabaseassistant.audit.enums.AuditEventType;
 import com.aidatabaseassistant.audit.enums.Severity;
 import com.aidatabaseassistant.audit.repository.AuditLogRepository;
+import com.aidatabaseassistant.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -23,9 +24,11 @@ import java.time.LocalDateTime;
 public class AuditController {
 
     private final AuditLogRepository auditLogRepository;
+    private final UserRepository userRepository;
 
-    public AuditController(AuditLogRepository auditLogRepository) {
+    public AuditController(AuditLogRepository auditLogRepository, UserRepository userRepository) {
         this.auditLogRepository = auditLogRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -51,6 +54,15 @@ public class AuditController {
     }
 
     private AuditLogDto mapToDto(AuditLog log) {
+        String userName = null;
+        if (log.getUserId() != null) {
+            userName = userRepository.findById(log.getUserId())
+                    .map(user -> user.getFullName())
+                    .orElse("System");
+        } else {
+            userName = "Unauthenticated";
+        }
+
         return AuditLogDto.builder()
                 .id(log.getId())
                 .userId(log.getUserId())
@@ -62,6 +74,7 @@ public class AuditController {
                 .provider(log.getProvider())
                 .executionTimeMs(log.getExecutionTimeMs())
                 .createdAt(log.getCreatedAt())
+                .userName(userName)
                 .build();
     }
 }

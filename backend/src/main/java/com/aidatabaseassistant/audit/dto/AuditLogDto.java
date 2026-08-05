@@ -18,10 +18,11 @@ public class AuditLogDto {
     private String provider;
     private Integer executionTimeMs;
     private LocalDateTime createdAt;
+    private String userName;
 
     public AuditLogDto() {}
 
-    public AuditLogDto(Long id, Long userId, Long connectionId, UUID chatSessionId, AuditEventType eventType, Severity severity, String description, String provider, Integer executionTimeMs, LocalDateTime createdAt) {
+    public AuditLogDto(Long id, Long userId, Long connectionId, UUID chatSessionId, AuditEventType eventType, Severity severity, String description, String provider, Integer executionTimeMs, LocalDateTime createdAt, String userName) {
         this.id = id;
         this.userId = userId;
         this.connectionId = connectionId;
@@ -32,6 +33,7 @@ public class AuditLogDto {
         this.provider = provider;
         this.executionTimeMs = executionTimeMs;
         this.createdAt = createdAt;
+        this.userName = userName;
     }
 
     public Long getId() { return id; }
@@ -54,6 +56,8 @@ public class AuditLogDto {
     public void setExecutionTimeMs(Integer executionTimeMs) { this.executionTimeMs = executionTimeMs; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
 
     public static Builder builder() {
         return new Builder();
@@ -70,6 +74,7 @@ public class AuditLogDto {
         private String provider;
         private Integer executionTimeMs;
         private LocalDateTime createdAt;
+        private String userName;
 
         public Builder id(Long id) { this.id = id; return this; }
         public Builder userId(Long userId) { this.userId = userId; return this; }
@@ -81,9 +86,10 @@ public class AuditLogDto {
         public Builder provider(String provider) { this.provider = provider; return this; }
         public Builder executionTimeMs(Integer executionTimeMs) { this.executionTimeMs = executionTimeMs; return this; }
         public Builder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
+        public Builder userName(String userName) { this.userName = userName; return this; }
 
         public AuditLogDto build() {
-            return new AuditLogDto(id, userId, connectionId, chatSessionId, eventType, severity, description, provider, executionTimeMs, createdAt);
+            return new AuditLogDto(id, userId, connectionId, chatSessionId, eventType, severity, description, provider, executionTimeMs, createdAt, userName);
         }
     }
 }
