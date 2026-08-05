@@ -6,6 +6,7 @@ import com.aidatabaseassistant.entity.User;
 import com.aidatabaseassistant.repository.DatabaseConnectionRepository;
 import com.aidatabaseassistant.repository.UserRepository;
 import com.aidatabaseassistant.security.EncryptionService;
+import com.aidatabaseassistant.audit.service.AuditFacade;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,26 +25,32 @@ public class ConnectionService {
     private final EncryptionService encryptionService;
     private final com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository;
     private final com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository;
+    private final AuditFacade auditFacade;
 
-    public ConnectionService(DatabaseConnectionRepository connectionRepository, UserRepository userRepository, EncryptionService encryptionService, com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository, com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository) {
+    public ConnectionService(DatabaseConnectionRepository connectionRepository, UserRepository userRepository, EncryptionService encryptionService, com.aidatabaseassistant.repository.ChatSessionRepository chatSessionRepository, com.aidatabaseassistant.repository.ChatMessageRepository chatMessageRepository, AuditFacade auditFacade) {
         this.connectionRepository = connectionRepository;
         this.userRepository = userRepository;
         this.encryptionService = encryptionService;
         this.chatSessionRepository = chatSessionRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.auditFacade = auditFacade;
     }
 
-    public TestConnectionResponse testConnection(TestConnectionRequest request) {
+    public TestConnectionResponse testConnection(String userEmail, TestConnectionRequest request) {
         String url = buildJdbcUrl(request.getDatabaseType(), request.getHost(), request.getPort(), request.getDatabaseName());
+        Long userId = userEmail != null ? getUserByEmail(userEmail).getId() : null;
         try {
             DriverManager.setLoginTimeout(5); // 5-second timeout for testing
             try (Connection conn = DriverManager.getConnection(url, request.getUsername(), request.getPassword())) {
                 if (conn.isValid(2)) {
+                    if (userId != null) auditFacade.logConnectionTested(userId, null, true, null);
                     return TestConnectionResponse.ok();
                 }
+                if (userId != null) auditFacade.logConnectionTested(userId, null, false, "Connection opened but failed validity test.");
                 return TestConnectionResponse.fail("Connection opened but failed validity test.");
             }
         } catch (SQLException e) {
+            if (userId != null) auditFacade.logConnectionTested(userId, null, false, e.getMessage());
             return TestConnectionResponse.fail("Connection failed: " + e.getMessage());
         }
     }
@@ -89,6 +96,7 @@ public class ConnectionService {
                 .build();
 
         DatabaseConnection saved = connectionRepository.save(conn);
+        auditFacade.logConnectionCreated(user.getId(), saved.getId());
         return ConnectionResponse.fromEntity(saved);
     }
 
@@ -112,6 +120,7 @@ public class ConnectionService {
         conn.setEncryptedPassword(encryptionService.encrypt(request.getPassword()));
 
         DatabaseConnection updated = connectionRepository.save(conn);
+        auditFacade.logConnectionUpdated(user.getId(), updated.getId());
         return ConnectionResponse.fromEntity(updated);
     }
 
@@ -129,6 +138,7 @@ public class ConnectionService {
         }
 
         connectionRepository.delete(conn);
+        auditFacade.logConnectionDeleted(user.getId(), conn.getId());
     }
 
     /**

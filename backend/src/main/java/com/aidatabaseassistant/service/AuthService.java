@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.aidatabaseassistant.audit.service.AuditFacade;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,12 +37,15 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager) {
+    private final AuditFacade auditFacade;
+    
+    public AuthService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, AuditFacade auditFacade) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.auditFacade = auditFacade;
     }
 
     public void register(RegisterRequest request) {
@@ -59,7 +64,8 @@ public class AuthService {
                 .build();
 
         user.getRoles().add(viewerRole);
-        userRepository.save(user);
+        user = userRepository.save(user);
+        auditFacade.logRegister(user.getId());
     }
 
 
@@ -84,6 +90,8 @@ public class AuthService {
                 .enabled(userDetails.isEnabled())
                 .roles(roles)
                 .build();
+
+        auditFacade.logLogin(userDetails.getId(), true);
 
         return LoginResponse.builder()
                 .token(jwt)
@@ -134,6 +142,7 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+        auditFacade.logPasswordChanged(user.getId());
     }
 
 

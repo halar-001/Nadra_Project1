@@ -1,0 +1,116 @@
+package com.aidatabaseassistant.audit.entity;
+
+import com.aidatabaseassistant.audit.enums.AuditEventType;
+import com.aidatabaseassistant.audit.enums.Severity;
+import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "audit_logs")
+public class AuditLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "connection_id")
+    private Long connectionId;
+
+    @Column(name = "chat_session_id")
+    private UUID chatSessionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", nullable = false, length = 100)
+    private AuditEventType eventType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "severity", nullable = false, length = 20)
+    private Severity severity;
+
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "provider", length = 50)
+    private String provider;
+
+    @Column(name = "execution_time_ms")
+    private Integer executionTimeMs;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    public AuditLog() {}
+
+    public AuditLog(Long id, Long userId, Long connectionId, UUID chatSessionId, AuditEventType eventType, Severity severity, String description, String provider, Integer executionTimeMs, LocalDateTime createdAt) {
+        this.id = id;
+        this.userId = userId;
+        this.connectionId = connectionId;
+        this.chatSessionId = chatSessionId;
+        this.eventType = eventType;
+        this.severity = severity;
+        this.description = description;
+        this.provider = provider;
+        this.executionTimeMs = executionTimeMs;
+        this.createdAt = createdAt;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    public Long getConnectionId() { return connectionId; }
+    public void setConnectionId(Long connectionId) { this.connectionId = connectionId; }
+    public UUID getChatSessionId() { return chatSessionId; }
+    public void setChatSessionId(UUID chatSessionId) { this.chatSessionId = chatSessionId; }
+    public AuditEventType getEventType() { return eventType; }
+    public void setEventType(AuditEventType eventType) { this.eventType = eventType; }
+    public Severity getSeverity() { return severity; }
+    public void setSeverity(Severity severity) { this.severity = severity; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
+    public Integer getExecutionTimeMs() { return executionTimeMs; }
+    public void setExecutionTimeMs(Integer executionTimeMs) { this.executionTimeMs = executionTimeMs; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Long id;
+        private Long userId;
+        private Long connectionId;
+        private UUID chatSessionId;
+        private AuditEventType eventType;
+        private Severity severity;
+        private String description;
+        private String provider;
+        private Integer executionTimeMs;
+        private LocalDateTime createdAt;
+
+        public Builder id(Long id) { this.id = id; return this; }
+        public Builder userId(Long userId) { this.userId = userId; return this; }
+        public Builder connectionId(Long connectionId) { this.connectionId = connectionId; return this; }
+        public Builder chatSessionId(UUID chatSessionId) { this.chatSessionId = chatSessionId; return this; }
+        public Builder eventType(AuditEventType eventType) { this.eventType = eventType; return this; }
+        public Builder severity(Severity severity) { this.severity = severity; return this; }
+        public Builder description(String description) { this.description = description; return this; }
+        public Builder provider(String provider) { this.provider = provider; return this; }
+        public Builder executionTimeMs(Integer executionTimeMs) { this.executionTimeMs = executionTimeMs; return this; }
+        public Builder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
+
+        public AuditLog build() {
+            return new AuditLog(id, userId, connectionId, chatSessionId, eventType, severity, description, provider, executionTimeMs, createdAt);
+        }
+    }
+}

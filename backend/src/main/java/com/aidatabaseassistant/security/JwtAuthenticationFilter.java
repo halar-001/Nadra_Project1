@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.aidatabaseassistant.audit.service.AuditFacade;
 
 import java.io.IOException;
 
@@ -23,15 +24,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final HandlerExceptionResolver exceptionResolver;
+    private final AuditFacade auditFacade;
 
     public JwtAuthenticationFilter(
             JwtService jwtService, 
             UserDetailsService userDetailsService,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver,
+            AuditFacade auditFacade
     ) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.exceptionResolver = exceptionResolver;
+        this.auditFacade = auditFacade;
     }
 
     @Override
@@ -67,7 +71,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (io.jsonwebtoken.JwtException e) {
+        } catch (Exception e) {
+            String email = "Unknown";
+            try {
+                email = jwtService.extractUsername(jwt);
+            } catch (Exception ignored) {}
+            auditFacade.logInvalidJwt(email, e.getMessage());
             // Ignore the exception and allow the request to proceed as unauthenticated.
             // Spring Security's authorization rules will deny access later if the endpoint is protected.
         }
