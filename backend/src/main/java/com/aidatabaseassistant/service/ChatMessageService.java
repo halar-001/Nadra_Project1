@@ -140,4 +140,12 @@ public class ChatMessageService {
     public ChatMessage getMessageById(UUID id) {
         return chatMessageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
     }
+
+    @Transactional
+    public void clearSessionMessages(ChatSession session) {
+        List<ChatMessage> history = chatMessageRepository.findByChatSessionOrderByCreatedAtAsc(session);
+        chatMessageRepository.deleteAll(history);
+        session.setMessageCount(0);
+        chatSessionRepository.save(session);
+    }
 }
