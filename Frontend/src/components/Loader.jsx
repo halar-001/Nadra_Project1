@@ -38,9 +38,9 @@ export const Loader = ({
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
             <Database size={28} className="animate-bounce" />
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">AI Database Assistant</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{text}</p>
+          <div className="space-y-1">
+            <h4 className="text-base font-bold text-slate-900 dark:text-white">DataPulse AI</h4>
+            <p className="text-xs font-medium text-slate-500">{text}</p>
           </div>
           <Loader2 size={24} className="animate-spin text-blue-600 dark:text-blue-400 mt-2" />
         </div>

@@ -56,14 +56,6 @@ export const Login = ({ initialTab = "login" }) => {
     resolver: zodResolver(registerSchema),
   });
 
-  const handleQuickFill = (email, password) => {
-    setActiveTab("login");
-    setLoginValue("email", email);
-    setLoginValue("password", password);
-    clearAuthError();
-    setLocalError(null);
-  };
-
   const onLogin = async (data) => {
     clearAuthError();
     setLocalError(null);
@@ -312,26 +304,7 @@ export const Login = ({ initialTab = "login" }) => {
               </div>
             </div>
 
-            {/* Demo Credentials Footer */}
-            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-4 sm:px-8 border-t border-slate-100 dark:border-slate-800/80 shrink-0">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-                <span className="font-bold text-slate-500 dark:text-slate-400">Demo Defaults:</span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => handleQuickFill("admin1@aidatabaseassistant.com", "Admin@12345")}
-                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[11px] hover:border-blue-500 hover:text-blue-600 transition-colors shadow-2xs cursor-pointer"
-                  >
-                    admin1 / Admin@12345
-                  </button>
-                  <button
-                    onClick={() => handleQuickFill("admin2@aidatabaseassistant.com", "Admin@12345")}
-                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[11px] hover:border-blue-500 hover:text-blue-600 transition-colors shadow-2xs cursor-pointer"
-                  >
-                    admin2 / Admin@12345
-                  </button>
-                </div>
-              </div>
-            </div>
+
           </div>
 
           {/* Right Card: Feature Showcase Carousel */}

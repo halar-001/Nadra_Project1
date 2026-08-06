@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { useChat } from "../context/ChatContext";
 import { getHealth } from "../services/healthService";
-import { Sun, Moon, Menu, Trash2 } from "lucide-react";
+import { Sun, Moon, Menu, Trash2, MessageSquare, LayoutGrid, Database, Network, UserCircle, ShieldAlert } from "lucide-react";
 import Button from "../components/Button";
 
 export const Navbar = ({ onToggleMobileSidebar }) => {
@@ -22,19 +22,19 @@ export const Navbar = ({ onToggleMobileSidebar }) => {
   const getPageTitle = () => {
     switch (location.pathname) {
       case "/chat":
-        return { title: "Database Workspace", subtitle: `${messages?.length || 0} / 40 Msgs` };
+        return { title: "Database Workspace", subtitle: `${messages?.length || 0} / 40 Msgs`, Icon: MessageSquare };
       case "/dashboard":
-        return { title: "DataPulse Dashboard", subtitle: "System Telemetry & Overview" };
+        return { title: "DataPulse Dashboard", subtitle: "System Telemetry & Overview", Icon: LayoutGrid };
       case "/connections":
-        return { title: "Database Catalogs", subtitle: "Manage External Connections" };
+        return { title: "Database Catalogs", subtitle: "Manage External Connections", Icon: Database };
       case "/schema":
-        return { title: "Schema Explorer", subtitle: "Inspect Structure & Metadata Cache" };
+        return { title: "Schema Explorer", subtitle: "Inspect Structure & Metadata Cache", Icon: Network };
       case "/profile":
-        return { title: "User Account Profile", subtitle: "Security & Credentials" };
+        return { title: "User Account Profile", subtitle: "Security & Credentials", Icon: UserCircle };
       case "/admin":
-        return { title: "System Audit Logs", subtitle: "Admin Security Trail" };
+        return { title: "System Audit Logs", subtitle: "Admin Security Trail", Icon: ShieldAlert };
       default:
-        return { title: "Database Workspace", subtitle: `${messages?.length || 0} / 40 Msgs` };
+        return { title: "Database Workspace", subtitle: `${messages?.length || 0} / 40 Msgs`, Icon: MessageSquare };
     }
   };
 
@@ -66,18 +66,28 @@ export const Navbar = ({ onToggleMobileSidebar }) => {
         </div>
 
         {/* Divider */}
-        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
+        <div className="h-7 w-px bg-slate-200 dark:bg-slate-700 mx-3 hidden sm:block" />
 
         {/* Page Heading beside API indicator */}
-        <div className="hidden sm:block">
-          <h1 className="text-sm font-black text-slate-900 dark:text-white tracking-tight leading-none">
+        <div className="hidden sm:flex sm:items-center sm:gap-3">
+          {pageInfo.Icon && (
+            <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-blue-50/80 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs">
+              <pageInfo.Icon size={18} />
+            </div>
+          )}
+          <div className="flex flex-col justify-center">
+            <h1 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
             {pageInfo.title}
           </h1>
           {pageInfo.subtitle && (
-            <p className="text-[10px] font-mono text-slate-400 leading-none mt-0.5">
-              {pageInfo.subtitle}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="h-1 w-1 rounded-full bg-blue-500/60 dark:bg-blue-400/60"></div>
+              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-none tracking-wider uppercase font-sans">
+                {pageInfo.subtitle}
+              </p>
+            </div>
           )}
+          </div>
         </div>
       </div>
 

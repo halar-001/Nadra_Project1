@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useChat } from "../context/ChatContext";
 import { useConnection } from "../context/ConnectionContext";
+import { useAuth } from "../context/AuthContext";
 import Card from "../components/Card";
 import ChartContainer from "../components/visualization/ChartContainer";
 import {
@@ -27,6 +28,10 @@ import {
 } from "lucide-react";
 
 export const Chat = () => {
+  const { user } = useAuth();
+  const rawRole = user?.role || (Array.isArray(user?.roles) ? user.roles[0] : user?.roles) || "";
+  const isViewer = rawRole === "ROLE_VIEWER";
+  
   const {
     sessions,
     allSessions,
@@ -205,7 +210,7 @@ export const Chat = () => {
               {/* USER MESSAGE BUBBLE */}
               {(m.sender === "USER" || m.role === "USER") && (
                 <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
-                  <div className="max-w-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white px-5 py-3 rounded-2xl rounded-tr-none text-sm font-semibold shadow-md shadow-blue-500/15 leading-relaxed">
+                  <div className="max-w-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white px-5 py-3.5 rounded-2xl rounded-tr-none text-base font-medium font-sans shadow-md shadow-blue-500/15 leading-relaxed tracking-wide">
                     {m.content || m.message}
                   </div>
                 </div>
@@ -222,7 +227,7 @@ export const Chat = () => {
                       <h4 className="text-sm font-bold text-rose-900 dark:text-rose-200">
                         AI Provider API Error
                       </h4>
-                      <p className="text-xs text-rose-700 dark:text-rose-300 font-medium leading-relaxed">
+                      <p className="text-sm text-rose-700 dark:text-rose-300 font-medium font-sans leading-relaxed tracking-wide">
                         {(m.content || m.message)?.replace(/^⚠️ Error:\s*/, "") || "All AI providers failed to generate or execute SQL. Please check your API keys or internet connection."}
                       </p>
                     </div>
@@ -235,13 +240,13 @@ export const Chat = () => {
                 <div className="w-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-md shadow-slate-200/30 dark:shadow-none space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-300">
                   {/* AI Text Summary / Intro */}
                   {(m.content || m.message) && (
-                    <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+                    <p className="text-sm sm:text-base font-medium font-sans text-slate-800 dark:text-slate-200 leading-relaxed tracking-wide">
                       {m.content || m.message}
                     </p>
                   )}
 
                   {/* SANITIZED SQL QUERY BOX */}
-                  {(m.generatedSql || m.sqlQuery) && (
+                  {!isViewer && (m.generatedSql || m.sqlQuery) && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 font-black text-[10px] tracking-wider uppercase shadow-2xs">
@@ -282,7 +287,7 @@ export const Chat = () => {
                       </div>
 
                       {/* SQL Code Block */}
-                      <div className="p-4 sm:p-5 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl font-mono text-xs sm:text-sm border border-slate-200/90 dark:border-slate-700/90 shadow-2xs select-all leading-relaxed overflow-x-auto whitespace-pre-wrap">
+                      <div className="p-4 sm:p-5 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl font-mono text-sm sm:text-base border border-slate-200/90 dark:border-slate-700/90 shadow-2xs select-all leading-relaxed overflow-x-auto whitespace-pre-wrap">
                         <code>{renderFormattedSql(m.generatedSql || m.sqlQuery)}</code>
                       </div>
                     </div>
@@ -325,12 +330,12 @@ export const Chat = () => {
 
                       {/* Interactive Results Table Grid */}
                       <div className="overflow-x-auto rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
-                        <table className="w-full text-left text-xs font-mono">
+                        <table className="w-full text-left text-sm font-mono tracking-wide">
                           <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200/90 dark:border-slate-700">
                             <tr>
-                              <th className="p-3 text-[10px] uppercase tracking-wider text-slate-400 w-12 text-center">#</th>
+                              <th className="p-3 text-xs font-sans font-bold uppercase tracking-wider text-slate-400 w-12 text-center">#</th>
                               {m.columns.map((col, idx) => (
-                                <th key={idx} className="p-3 font-extrabold text-blue-600 dark:text-blue-400">
+                                <th key={idx} className="p-3 font-bold font-sans tracking-wide text-blue-600 dark:text-blue-400">
                                   {col}
                                 </th>
                               ))}
@@ -340,11 +345,11 @@ export const Chat = () => {
                             {paginatedRows.length > 0 ? (
                               paginatedRows.map((row, rIdx) => (
                                 <tr key={rIdx} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/60 transition-colors">
-                                  <td className="p-3 text-[10px] text-slate-400 font-bold text-center">
+                                  <td className="p-3 text-xs font-sans text-slate-400 font-bold text-center">
                                     {(currentPage - 1) * ITEMS_PER_PAGE + rIdx + 1}
                                   </td>
                                   {row.map((cell, cIdx) => (
-                                    <td key={cIdx} className="p-3 text-slate-800 dark:text-slate-200 font-medium whitespace-nowrap">
+                                    <td key={cIdx} className="p-3 text-sm text-slate-800 dark:text-slate-200 font-medium font-sans tracking-wide whitespace-nowrap">
                                       {cell === null || cell === undefined ? (
                                         <span className="text-slate-400 italic">null</span>
                                       ) : typeof cell === "number" ? (

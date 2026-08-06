@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Card from "../components/Card";
 import { useConnection } from "../context/ConnectionContext";
@@ -12,6 +12,8 @@ import {
   Link2,
   Zap,
   ChevronRight,
+  ChevronDown,
+  Check,
   Layers,
   FileCode2,
 } from "lucide-react";
@@ -31,6 +33,18 @@ export const SchemaExplorer = () => {
   const [selectedTableName, setSelectedTableName] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("columns"); // "columns" | "relationships" | "json"
+  const [isDbDropdownOpen, setIsDbDropdownOpen] = useState(false);
+  const dbMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dbMenuRef.current && !dbMenuRef.current.contains(event.target)) {
+        setIsDbDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Sync and fetch schema when currentConnId changes
   useEffect(() => {
@@ -105,29 +119,73 @@ export const SchemaExplorer = () => {
             <div className="p-2 bg-blue-50 dark:bg-blue-950/80 rounded-xl text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80">
               <Database size={18} />
             </div>
-            <div>
-              <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider block">
+            <div className="flex flex-col justify-center">
+              <span className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight uppercase">
                 Target Database Context
               </span>
-              <span className="text-xs text-slate-500 font-mono">
-                {currentSchema?.databaseName || "Target Database"} • {currentSchema?.tables?.length || 0} Tables Registered
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="h-1 w-1 rounded-full bg-blue-500/60 dark:bg-blue-400/60"></div>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-none tracking-wider uppercase font-sans">
+                  {currentSchema?.databaseName || "Target Database"} • {currentSchema?.tables?.length || 0} Tables Registered
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
             {/* Target DB Selector */}
-            <select
-              value={currentConnId || ""}
-              onChange={(e) => handleConnectionChange(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
-            >
-              {connections.map((c) => (
-                <option key={c.id} value={c.id} className="dark:bg-slate-900">
-                  {c.connectionName} ({c.databaseType || "MYSQL"})
-                </option>
-              ))}
-            </select>
+            <div className="relative flex items-center min-w-[220px]" ref={dbMenuRef}>
+              <button
+                onClick={() => setIsDbDropdownOpen(!isDbDropdownOpen)}
+                className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2 px-3 text-sm font-extrabold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <div className="truncate flex items-center gap-2">
+                  <Database size={14} className="text-blue-500 shrink-0" />
+                  <span className="truncate">
+                    {connections?.find(c => c.id === currentConnId)?.connectionName || "Select Connection..."}
+                  </span>
+                </div>
+                <ChevronDown size={14} className={`text-slate-500 shrink-0 transition-transform duration-200 ${isDbDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isDbDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/80 rounded-xl shadow-2xl shadow-slate-400/20 dark:shadow-black/80 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-black/5 dark:ring-white/5">
+                  <div className="max-h-60 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+                    {connections && connections.length > 0 ? (
+                      connections.map((conn) => (
+                        <button
+                          key={conn.id}
+                          onClick={() => {
+                            handleConnectionChange(conn.id);
+                            setIsDbDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors text-left cursor-pointer ${
+                            currentConnId === conn.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                          }`}
+                        >
+                          <Database size={14} className={currentConnId === conn.id ? "text-blue-600 dark:text-blue-400 shrink-0" : "text-slate-400 shrink-0"} />
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-[13px] font-bold truncate ${currentConnId === conn.id ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-200"}`}>
+                              {conn.connectionName}
+                            </div>
+                            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 font-mono mt-0.5 tracking-wider truncate">
+                              ({conn.databaseName || conn.databaseType || "Unknown DB"})
+                            </div>
+                          </div>
+                          {currentConnId === conn.id && (
+                            <Check size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-xs text-slate-500 text-center font-medium italic">
+                        No Connections Available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Cache Status Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs font-extrabold shadow-2xs">
@@ -160,12 +218,12 @@ export const SchemaExplorer = () => {
                   placeholder="Filter tables or cols..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 pl-8 pr-2.5 text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 pl-8 pr-2.5 text-sm font-semibold font-sans text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               {/* Table Counter */}
-              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 px-1 uppercase tracking-wider">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-1 uppercase tracking-wider font-sans">
                 <span>Tables ({filteredTables.length})</span>
                 <span>{currentSchema?.relationships?.length || 0} Foreign Keys</span>
               </div>
@@ -188,13 +246,13 @@ export const SchemaExplorer = () => {
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <TableIcon size={14} className={isSelected ? "text-white" : isView ? "text-amber-500 shrink-0" : "text-blue-500 shrink-0"} />
-                        <span className="text-xs font-mono font-bold truncate">{tbl.tableName}</span>
+                        <TableIcon size={15} className={isSelected ? "text-white" : isView ? "text-amber-500 shrink-0" : "text-blue-500 shrink-0"} />
+                        <span className="text-sm font-sans font-semibold tracking-wide truncate">{tbl.tableName}</span>
                       </div>
 
                       <span
                         title={`${colCount} Columns`}
-                        className={`ml-2 px-1.5 py-0.5 text-[9px] font-black uppercase rounded shrink-0 border ${
+                        className={`ml-2 px-1.5 py-0.5 text-[10px] font-extrabold tracking-wide uppercase rounded shrink-0 border ${
                           isSelected
                             ? "bg-white/20 text-white border-white/30"
                             : isView
@@ -277,20 +335,20 @@ export const SchemaExplorer = () => {
                 {/* TAB 1: COLUMNS TABLE */}
                 {activeTab === "columns" && (
                   <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-                    <table className="w-full text-left text-xs font-mono">
-                      <thead className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-700">
+                    <table className="w-full text-left text-sm font-sans tracking-wide">
+                      <thead className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
                         <tr>
-                          <th className="p-3">Column Name</th>
-                          <th className="p-3">Data Type</th>
-                          <th className="p-3">Nullable</th>
-                          <th className="p-3">Key / Attributes</th>
-                          <th className="p-3">Default Value</th>
+                          <th className="p-3 font-semibold uppercase text-xs text-slate-600 dark:text-slate-300">Column Name</th>
+                          <th className="p-3 font-semibold uppercase text-xs text-slate-600 dark:text-slate-300">Data Type</th>
+                          <th className="p-3 font-semibold uppercase text-xs text-slate-600 dark:text-slate-300">Nullable</th>
+                          <th className="p-3 font-semibold uppercase text-xs text-slate-600 dark:text-slate-300">Key / Attributes</th>
+                          <th className="p-3 font-semibold uppercase text-xs text-slate-600 dark:text-slate-300">Default Value</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900">
                         {activeTable.columns?.map((col) => (
                           <tr key={col.columnName} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
-                            <td className="p-3 font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <td className="p-3 font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
                               {col.primaryKey && <Key size={13} className="text-amber-500 shrink-0" title="Primary Key" />}
                               <span>{col.columnName}</span>
                             </td>
@@ -329,8 +387,8 @@ export const SchemaExplorer = () => {
                               </div>
                             </td>
 
-                            <td className="p-3 text-slate-500 font-mono text-[11px]">
-                              {col.defaultValue || <span className="text-slate-400 italic">null</span>}
+                            <td className="p-3 text-slate-500 font-mono text-[12px]">
+                              {col.defaultValue || <span className="text-slate-400 italic font-sans">null</span>}
                             </td>
                           </tr>
                         ))}

@@ -17,7 +17,7 @@ import Loader from "../components/Loader";
 export const AppRoutes = () => {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<Loader fullScreen text="Loading AI Database Assistant..." />}>
+      <Suspense fallback={<Loader fullScreen text="Loading DataPulse AI..." />}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
