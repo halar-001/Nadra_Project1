@@ -299,9 +299,18 @@ export const ChatProvider = ({ children }) => {
   /**
    * Clear all messages in current session
    */
-  const clearMessages = () => {
-    setMessages([]);
-    setErrorState(null);
+  const clearMessages = async () => {
+    if (!activeSessionId) return;
+    try {
+      await chatSessionService.clearSessionMessages(activeSessionId);
+      setMessages([]);
+      setErrorState(null);
+      setSessions((prev) =>
+        prev.map((s) => (s.id === activeSessionId ? { ...s, messageCount: 0 } : s))
+      );
+    } catch (err) {
+      console.error("[ChatContext] Error clearing messages:", err);
+    }
   };
 
   // Filtered Sessions List based on search term

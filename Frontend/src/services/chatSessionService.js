@@ -193,6 +193,24 @@ export const chatSessionService = {
       return found?.messages || [];
     }
   },
+
+  /**
+   * Clear all messages in a conversation session.
+   * Calls DELETE /api/chat/sessions/{id}/messages
+   */
+  clearSessionMessages: async (sessionId) => {
+    try {
+      await api.delete(`/chat/sessions/${sessionId}/messages`);
+      return true;
+    } catch (error) {
+      console.warn(`[chatSessionService] Offline mode: Clearing messages for session ${sessionId} locally.`, error?.message);
+      localSessionsStore = localSessionsStore.map((s) =>
+        s.id === sessionId ? { ...s, messages: [], messageCount: 0 } : s
+      );
+      saveLocalStore(localSessionsStore);
+      return true;
+    }
+  },
 };
 
 export default chatSessionService;

@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import Logo from "../components/Logo";
+import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useConnection } from "../context/ConnectionContext";
@@ -41,6 +42,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const menuRef = useRef(null);
 
   // Close popover when clicking outside
@@ -90,9 +92,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
 
   const handleDelete = async (e, sessionId) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this conversation session?")) {
-      await deleteSession(sessionId);
-    }
+    setDeleteConfirmId(sessionId);
   };
 
   const sidebarContent = (
@@ -387,6 +387,41 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           <aside className="relative w-72 max-w-[80vw] h-full shadow-2xl animate-in slide-in-from-left duration-200 z-10">
             {sidebarContent}
           </aside>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 w-full max-w-sm flex flex-col gap-5 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white font-display">Delete Chat?</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                Are you sure you want to delete this conversation session? This action is permanent and cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <button
+                onClick={async () => {
+                  await deleteSession(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer bg-rose-500 hover:bg-rose-600 text-white transition-all shadow-md shadow-rose-500/20"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
