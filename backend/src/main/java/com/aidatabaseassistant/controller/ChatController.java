@@ -82,4 +82,13 @@ public class ChatController {
         com.aidatabaseassistant.entity.ChatSession session = chatSessionService.getSessionEntity(sessionId, authentication.getName());
         return ResponseEntity.ok(chatMessageService.getSessionHistory(session));
     }
+
+    @DeleteMapping("/sessions/{sessionId}/messages")
+    public ResponseEntity<Void> clearSessionMessages(
+            @PathVariable java.util.UUID sessionId,
+            Authentication authentication) {
+        com.aidatabaseassistant.entity.ChatSession session = chatSessionService.getSessionEntity(sessionId, authentication.getName());
+        chatMessageService.clearSessionMessages(session);
+        return ResponseEntity.noContent().build();
+    }
 }

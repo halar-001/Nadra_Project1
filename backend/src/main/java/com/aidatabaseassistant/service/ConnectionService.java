@@ -166,7 +166,7 @@ public class ConnectionService {
         String type = databaseType != null ? databaseType.toUpperCase() : "MYSQL";
         return switch (type) {
             case "MYSQL" -> "jdbc:mysql://" + host + ":" + port + "/" + databaseName + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=5000";
-            case "POSTGRESQL", "POSTGRES" -> "jdbc:postgresql://" + host + ":" + port + "/" + databaseName + "?connectTimeout=5";
+            case "POSTGRESQL", "POSTGRES" -> "jdbc:postgresql://" + host + ":" + port + "/" + databaseName + "?connectTimeout=5&sslmode=require";
             case "SQLSERVER", "MSSQL" -> "jdbc:sqlserver://" + host + ":" + port + ";databaseName=" + databaseName + ";encrypt=true;trustServerCertificate=true;loginTimeout=5";
             case "ORACLE" -> "jdbc:oracle:thin:@" + host + ":" + port + ":" + databaseName;
             case "H2" -> "jdbc:h2:mem:" + databaseName + ";DB_CLOSE_DELAY=-1";

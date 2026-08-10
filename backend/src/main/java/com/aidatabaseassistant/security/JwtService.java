@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 @Service
 public class JwtService {
 
+    private static final Date SERVER_START_TIME = new Date();
+
     @Value("${security.jwt.secret}")
     private String jwtSecret;
 
@@ -61,7 +63,12 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token) && !isTokenIssuedBeforeRestart(token);
+    }
+
+    private boolean isTokenIssuedBeforeRestart(String token) {
+        Date issuedAt = extractClaim(token, Claims::getIssuedAt);
+        return issuedAt != null && issuedAt.before(SERVER_START_TIME);
     }
 
     private boolean isTokenExpired(String token) {
