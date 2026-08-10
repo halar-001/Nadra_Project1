@@ -199,6 +199,18 @@ export const Login = ({ initialTab = "login" }) => {
                       {loginErrors.password && <p className="text-xs text-rose-500 font-medium pl-1 mt-1">{loginErrors.password.message}</p>}
                     </div>
 
+                    <div className="flex items-center pl-1 py-1">
+                      <input
+                        {...loginRegister("rememberMe")}
+                        id="rememberMe"
+                        type="checkbox"
+                        className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer transition-colors"
+                      />
+                      <label htmlFor="rememberMe" className="ml-2 text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer select-none">
+                        Remember me
+                      </label>
+                    </div>
+
                     <button
                       type="submit"
                       disabled={isLoginSubmitting}
