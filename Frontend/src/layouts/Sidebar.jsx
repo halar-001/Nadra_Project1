@@ -115,7 +115,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         </div>
 
         {/* Target Database Select Dropdown (Pinned at Top) */}
-        <div className="px-3 pb-3 space-y-1.5">
+        <div className="px-3 pb-3 pt-4 space-y-1.5">
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Target Connection

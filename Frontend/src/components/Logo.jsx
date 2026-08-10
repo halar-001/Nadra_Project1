@@ -1,10 +1,11 @@
 import React from "react";
+import { Link } from 'react-router-dom';
 
 export const Logo = ({ size = "md" }) => {
   const isSm = size === "sm";
 
   return (
-    <div className="flex items-center gap-3 select-none">
+    <Link to="/dashboard" className="flex items-center gap-3 select-none cursor-pointer hover:opacity-90 transition-opacity block">
       {/* 3D Stacked Database Cylinder Logo Icon */}
       <div className="relative flex items-center justify-center shrink-0">
         <svg
@@ -51,7 +52,7 @@ export const Logo = ({ size = "md" }) => {
           Intelligent Database Assistant
         </span>
       </div>
-    </div>
+    </Link>
   );
 };
 
