@@ -26,13 +26,29 @@ api.interceptors.request.use(
 
 // Response Interceptor: Handle Global 401 Unauthorized & 403 Forbidden Responses
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (localStorage.getItem("token")) {
+      localStorage.setItem("last_api_activity", Date.now().toString());
+    } else {
+      sessionStorage.setItem("last_api_activity", Date.now().toString());
+    }
+    return response;
+  },
   (error) => {
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       // If token exists but server returns 401/403, token is expired or invalid
       if (token && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
         console.warn("Session expired or token invalid. Status:", error.response.status);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_ai_prompt_count");
+        localStorage.removeItem("user_ai_sql_count");
+        localStorage.removeItem("last_api_activity");
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("last_api_activity");
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);

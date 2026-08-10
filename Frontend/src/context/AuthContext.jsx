@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     if (userData && tokenData) {
       storage.setItem("user", JSON.stringify(userData));
       storage.setItem("token", tokenData);
+      storage.setItem("last_api_activity", Date.now().toString());
     }
     
     setUser(userData);
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user_ai_sql_count");
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("token");
+    sessionStorage.removeItem("last_api_activity");
     setUser(null);
     setToken(null);
   };
@@ -55,6 +57,25 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     verifySession();
   }, [verifySession]);
+
+  // 5-minute inactivity / disconnect timer
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      const lastActivity = localStorage.getItem("last_api_activity") || sessionStorage.getItem("last_api_activity");
+      if (lastActivity) {
+        const timeSinceLastActivity = Date.now() - parseInt(lastActivity, 10);
+        if (timeSinceLastActivity > 5 * 60 * 1000) { // 5 minutes
+          console.warn("Logging out due to inactivity/backend disconnect.");
+          clearAuthData();
+          window.location.href = "/login";
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   /**
    * Log in user with email & password

@@ -14,7 +14,7 @@ export const MainLayout = ({ children }) => {
         isOpenMobile={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />
-      <div className="lg:pl-64 flex-1 h-screen overflow-hidden flex flex-col min-w-0">
+      <div className="lg:pl-72 flex-1 h-screen overflow-hidden flex flex-col min-w-0">
         <Navbar onToggleMobileSidebar={() => setMobileSidebarOpen(true)} />
         <main
           className={`flex-1 w-full ${

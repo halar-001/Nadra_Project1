@@ -34,6 +34,7 @@ export const Connections = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedDetailsConn, setSelectedDetailsConn] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -332,7 +333,7 @@ export const Connections = () => {
                                 <Settings size={15} />
                               </button>
                               <button
-                                onClick={() => deleteConnection(cat.id)}
+                                onClick={() => setDeleteConfirmId(cat.id)}
                                 title="Delete Connection"
                                 className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 transition-colors cursor-pointer"
                               >
@@ -683,6 +684,41 @@ export const Connections = () => {
               >
                 Close
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 w-full max-w-sm flex flex-col gap-5 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white font-display">Delete Connection?</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                Are you sure you want to delete this database connection? This action is permanent and will also delete any associated chat sessions.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <button
+                onClick={() => {
+                  deleteConnection(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer bg-rose-500 hover:bg-rose-600 text-white transition-all shadow-md shadow-rose-500/20"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

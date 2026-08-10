@@ -58,18 +58,52 @@ export const Dashboard = () => {
     : 18;
 
   // Dynamic Telemetry Latency dataset
-  const dynamicLatencyData = [
-    { endpoint: "/api/chat/stream", latency: avgLatencyMs > 0 ? avgLatencyMs : 85, time: "11:30" },
-    { endpoint: "/api/connections", latency: 35, time: "11:31" },
-    { endpoint: "/api/users/me", latency: 20, time: "11:32" },
-    { endpoint: "/api/sql/validate", latency: 15, time: "11:33" },
-    { endpoint: "/api/auth/login", latency: 45, time: "11:34" },
-    { endpoint: "/api/chat/sessions", latency: 28, time: "11:35" },
-    { endpoint: "/api/schema/refresh", latency: 92, time: "11:36" },
-    { endpoint: "/api/health", latency: 8, time: "11:37" },
-    { endpoint: "/api/chat/stream", latency: avgLatencyMs, time: "11:38" },
-    { endpoint: "/api/users/me", latency: 18, time: "11:39" },
-  ];
+  const getLatencyDataForTimeframe = (tf) => {
+    const base = avgLatencyMs > 0 ? avgLatencyMs : 45;
+    if (tf === "1H") {
+      return [
+        { endpoint: "/api/chat", latency: Math.max(5, base - 10), time: "11:30" },
+        { endpoint: "/api/connections", latency: 35, time: "11:31" },
+        { endpoint: "/api/users/me", latency: 20, time: "11:32" },
+        { endpoint: "/api/sql/validate", latency: 15, time: "11:33" },
+        { endpoint: "/api/auth/login", latency: 45, time: "11:34" },
+        { endpoint: "/api/chat/sessions", latency: 28, time: "11:35" },
+        { endpoint: "/api/schema", latency: 92, time: "11:36" },
+        { endpoint: "/api/health", latency: 8, time: "11:37" },
+        { endpoint: "/api/chat/stream", latency: base, time: "11:38" },
+        { endpoint: "/api/users/me", latency: 18, time: "Now" },
+      ];
+    }
+    if (tf === "24H") {
+      return [
+        { endpoint: "/api/chat", latency: base + 15, time: "Yesterday" },
+        { endpoint: "/api/schema", latency: 120, time: "18:00" },
+        { endpoint: "/api/connections", latency: 45, time: "21:00" },
+        { endpoint: "/api/chat", latency: base + 5, time: "00:00" },
+        { endpoint: "/api/auth", latency: 60, time: "03:00" },
+        { endpoint: "/api/chat", latency: base - 5, time: "06:00" },
+        { endpoint: "/api/users", latency: 25, time: "09:00" },
+        { endpoint: "/api/health", latency: 12, time: "10:00" },
+        { endpoint: "/api/chat", latency: base, time: "Now" },
+      ];
+    }
+    return [
+      { endpoint: "/api/chat", latency: base + 25, time: "Mon" },
+      { endpoint: "/api/connections", latency: 40, time: "Tue" },
+      { endpoint: "/api/schema", latency: 140, time: "Wed" },
+      { endpoint: "/api/chat", latency: base + 10, time: "Thu" },
+      { endpoint: "/api/users", latency: 22, time: "Fri" },
+      { endpoint: "/api/chat", latency: base, time: "Sat" },
+      { endpoint: "/api/health", latency: 15, time: "Now" },
+    ];
+  };
+
+  // Timeframe state for latency chart
+  const [timeframe, setTimeframe] = useState("1H");
+  const [activeHoverBar, setActiveHoverBar] = useState(null);
+
+  const dynamicLatencyData = getLatencyDataForTimeframe(timeframe);
+  const maxLatency = Math.max(...dynamicLatencyData.map(d => d.latency), 100);
 
   // Log Stream State
   const [logs, setLogs] = useState(INITIAL_LOGS);
@@ -78,10 +112,6 @@ export const Dashboard = () => {
   const [isLiveStreaming, setIsLiveStreaming] = useState(true);
   const [copied, setCopied] = useState(false);
   const logTerminalRef = useRef(null);
-
-  // Timeframe state for latency chart
-  const [timeframe, setTimeframe] = useState("1H");
-  const [activeHoverBar, setActiveHoverBar] = useState(null);
 
   // Auto-generate live stream logs every 4 seconds when live is active
   useEffect(() => {
@@ -353,7 +383,7 @@ export const Dashboard = () => {
                     className="flex-1 flex flex-col items-center group relative cursor-pointer h-full justify-end"
                   >
                     <div
-                      style={{ height: `${(item.latency / 100) * 100}%` }}
+                      style={{ height: `${(item.latency / maxLatency) * 100}%` }}
                       className={`w-full rounded-t-md transition-all duration-300 ${
                         activeHoverBar === i
                           ? "bg-blue-600 dark:bg-blue-400 shadow-lg shadow-blue-500/50 scale-x-105"
@@ -365,11 +395,9 @@ export const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 font-medium">
-              <span>11:30</span>
-              <span>11:32</span>
-              <span>11:34</span>
-              <span>11:36</span>
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2 font-medium px-1">
+              <span>{dynamicLatencyData[0]?.time}</span>
+              <span>{dynamicLatencyData[Math.floor(dynamicLatencyData.length / 2)]?.time}</span>
               <span>Now ({avgLatencyMs}ms avg)</span>
             </div>
           </div>

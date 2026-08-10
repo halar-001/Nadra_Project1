@@ -8,8 +8,8 @@ export const Logo = ({ size = "md" }) => {
       {/* 3D Stacked Database Cylinder Logo Icon */}
       <div className="relative flex items-center justify-center shrink-0">
         <svg
-          width={isSm ? "30" : "36"}
-          height={isSm ? "30" : "36"}
+          width={isSm ? "34" : "42"}
+          height={isSm ? "34" : "42"}
           viewBox="0 0 40 40"
           fill="none"
           className="hover:scale-105 transition-transform"
@@ -40,10 +40,10 @@ export const Logo = ({ size = "md" }) => {
 
       <div className="flex flex-col leading-tight">
         <div className="flex items-center">
-          <span className={`font-black tracking-tight text-slate-900 dark:text-white ${isSm ? "text-lg" : "text-xl"}`}>
+          <span className={`font-black tracking-tight text-slate-900 dark:text-white leading-none ${isSm ? "text-lg" : "text-xl"}`}>
             Data<span className="text-blue-600 dark:text-blue-400">Pulse</span>
           </span>
-          <span className="ml-1.5 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-800/80 rounded-md">
+          <span className={`ml-2 px-1 py-0.5 font-bold tracking-tight text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border-2 border-blue-400/80 dark:border-blue-800/80 rounded-lg leading-none ${isSm ? "text-lg" : "text-xl"}`}>
             AI
           </span>
         </div>

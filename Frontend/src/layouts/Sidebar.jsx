@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import Logo from "../components/Logo";
+import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useConnection } from "../context/ConnectionContext";
@@ -39,15 +40,21 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
   const location = useLocation();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isDbDropdownOpen, setIsDbDropdownOpen] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const menuRef = useRef(null);
+  const dbMenuRef = useRef(null);
 
-  // Close popover when clicking outside
+  // Close popovers when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowUserMenu(false);
+      }
+      if (dbMenuRef.current && !dbMenuRef.current.contains(event.target)) {
+        setIsDbDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -90,9 +97,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
 
   const handleDelete = async (e, sessionId) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this conversation session?")) {
-      await deleteSession(sessionId);
-    }
+    setDeleteConfirmId(sessionId);
   };
 
   const sidebarContent = (
@@ -119,30 +124,61 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
               {connections?.length || 0} Active
             </span>
           </div>
-          <div className="relative flex items-center">
-            <select
-              value={selectedConnectionId || ""}
-              onChange={async (e) => {
-                const newConnId = Number(e.target.value);
-                setSelectedConnectionId(newConnId);
-                await createNewSession("New Chat Session", newConnId);
-                if (location.pathname !== "/chat") navigate("/chat");
-              }}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2 px-3 pr-8 text-xs font-extrabold text-slate-900 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs transition-all hover:bg-slate-100 dark:hover:bg-slate-750"
+          <div className="relative flex items-center" ref={dbMenuRef}>
+            {/* Custom Dropdown Trigger Button */}
+            <button
+              onClick={() => setIsDbDropdownOpen(!isDbDropdownOpen)}
+              className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 rounded-xl py-2 px-3 text-sm font-extrabold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              {connections && connections.length > 0 ? (
-                connections.map((conn) => (
-                  <option key={conn.id} value={conn.id} className="dark:bg-slate-900 font-semibold">
-                    {conn.connectionName} ({conn.databaseType || "DB"})
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled className="dark:bg-slate-900">
-                  No Connections Available
-                </option>
-              )}
-            </select>
-            <ChevronDown size={14} className="absolute right-3 text-slate-500 pointer-events-none" />
+              <div className="truncate flex items-center gap-2">
+                <Database size={14} className="text-blue-500 shrink-0" />
+                <span className="truncate">
+                  {connections?.find(c => c.id === selectedConnectionId)?.connectionName || "Select Connection..."}
+                </span>
+              </div>
+              <ChevronDown size={14} className={`text-slate-500 shrink-0 transition-transform duration-200 ${isDbDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Custom Dropdown Menu */}
+            {isDbDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/80 rounded-xl shadow-2xl shadow-slate-400/20 dark:shadow-black/80 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-black/5 dark:ring-white/5">
+                <div className="max-h-60 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+                  {connections && connections.length > 0 ? (
+                    connections.map((conn) => (
+                      <button
+                        key={conn.id}
+                        onClick={async () => {
+                          setSelectedConnectionId(conn.id);
+                          setIsDbDropdownOpen(false);
+                          await createNewSession("New Chat Session", conn.id);
+                          if (location.pathname !== "/chat") navigate("/chat");
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors text-left cursor-pointer ${
+                          selectedConnectionId === conn.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                        }`}
+                      >
+                        <Database size={14} className={selectedConnectionId === conn.id ? "text-blue-600 dark:text-blue-400 shrink-0" : "text-slate-400 shrink-0"} />
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-[13px] font-bold truncate ${selectedConnectionId === conn.id ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-200"}`}>
+                            {conn.connectionName}
+                          </div>
+                          <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 font-mono mt-0.5 tracking-wider truncate">
+                            ({conn.databaseName || conn.databaseType || "Unknown DB"})
+                          </div>
+                        </div>
+                        {selectedConnectionId === conn.id && (
+                          <Check size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-xs text-slate-500 text-center font-medium italic">
+                      No Connections Available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -158,9 +194,9 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
               navigate("/chat");
               onCloseMobile();
             }}
-            className="w-full py-2.5 px-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
+            className="w-full py-2.5 px-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-sm font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
           >
-            <Plus size={16} />
+            <Plus size={18} />
             <span>New Chat Session</span>
           </button>
         </div>
@@ -170,13 +206,13 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           <NavLink
             to="/chat"
             onClick={onCloseMobile}
-            className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 group ${
+            className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 group ${
               location.pathname === "/chat"
                 ? "bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 font-extrabold border border-blue-200/80 dark:border-blue-800"
                 : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <SquarePen size={16} className="shrink-0" />
+            <SquarePen size={18} className="shrink-0" />
             <span>AI Chat Assistant</span>
           </NavLink>
 
@@ -188,13 +224,13 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                 key={item.path}
                 to={item.path}
                 onClick={onCloseMobile}
-                className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 group ${
+                className={`relative flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 group ${
                   isActive
                     ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25"
                     : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <Icon size={16} className={`shrink-0 transition-transform duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
+                <Icon size={18} className={`shrink-0 transition-transform duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
                 <span>{item.label}</span>
               </NavLink>
             );
@@ -204,13 +240,13 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         {/* CONVERSATION SEARCH BOX */}
         <div className="pt-1">
           <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 pl-7 pr-2.5 text-[11px] font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl py-2 pl-9 pr-3 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
@@ -226,9 +262,9 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
 
             return (
               <>
-                <div className="flex items-center justify-between px-2 py-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                <div className="flex items-center justify-between px-2 py-1 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                   <span>Conversations</span>
-                  <span className="px-1.5 py-0.2 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md font-extrabold">
+                  <span className="px-1.5 py-0.2 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-md font-extrabold">
                     {displayedSessions.length}
                   </span>
                 </div>
@@ -246,14 +282,14 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                           if (location.pathname !== "/chat") navigate("/chat");
                           onCloseMobile();
                         }}
-                        className={`group w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all cursor-pointer ${
+                        className={`group w-full flex items-center justify-between p-2.5 rounded-xl text-sm transition-all cursor-pointer ${
                           isSelected
                             ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-extrabold border border-slate-200 dark:border-slate-700"
                             : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <MessageSquare size={13} className={isSelected ? "text-blue-500 shrink-0" : "text-slate-400 shrink-0"} />
+                          <MessageSquare size={16} className={isSelected ? "text-blue-500 shrink-0" : "text-slate-400 shrink-0"} />
                           {isEditing ? (
                             <input
                               type="text"
@@ -264,10 +300,10 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") handleSaveRename(e, s.id);
                               }}
-                              className="w-full bg-white dark:bg-slate-900 border border-blue-500 rounded px-1.5 py-0.5 text-xs font-semibold focus:outline-none"
+                              className="w-full bg-white dark:bg-slate-900 border border-blue-500 rounded px-2 py-1 text-sm font-semibold focus:outline-none"
                             />
                           ) : (
-                            <span className="truncate font-semibold text-[11px]">{s.title}</span>
+                            <span className="truncate font-semibold text-sm">{s.title}</span>
                           )}
                         </div>
 
@@ -277,11 +313,11 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                               onClick={(e) => handleSaveRename(e, s.id)}
                               className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-emerald-600 rounded"
                             >
-                              <Check size={12} />
+                              <Check size={14} />
                             </button>
                           ) : (
                             <>
-                              <span className="text-[9px] font-mono text-slate-400 group-hover:hidden">
+                              <span className="text-[10px] font-mono text-slate-400 group-hover:hidden">
                                 {s.messageCount || 0}/40
                               </span>
                               <button
@@ -289,14 +325,14 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
                                 className="hidden group-hover:block p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
                                 title="Rename Chat"
                               >
-                                <Edit2 size={12} />
+                                <Edit2 size={14} />
                               </button>
                               <button
                                 onClick={(e) => handleDelete(e, s.id)}
                                 className="hidden group-hover:block p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded"
                                 title="Delete Chat"
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={14} />
                               </button>
                             </>
                           )}
@@ -356,12 +392,12 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           title="User Account Menu"
         >
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 to-orange-500 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-600 to-orange-500 flex items-center justify-center text-white text-sm font-black shadow-xs shrink-0">
               {userInitials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-black text-slate-900 dark:text-white truncate">{displayName}</p>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate capitalize font-medium">{formattedRole}</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white truncate">{displayName}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate capitalize font-medium">{formattedRole}</p>
             </div>
           </div>
           <ChevronDown size={14} className={`text-slate-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
@@ -373,7 +409,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
   return (
     <>
       {/* Desktop Fixed Sidebar */}
-      <aside className="hidden lg:flex w-64 flex-col h-screen fixed left-0 top-0 z-30">
+      <aside className="hidden lg:flex w-72 flex-col h-screen fixed left-0 top-0 z-30">
         {sidebarContent}
       </aside>
 
@@ -387,6 +423,41 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
           <aside className="relative w-72 max-w-[80vw] h-full shadow-2xl animate-in slide-in-from-left duration-200 z-10">
             {sidebarContent}
           </aside>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 w-full max-w-sm flex flex-col gap-5 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white font-display">Delete Chat?</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                Are you sure you want to delete this conversation session? This action is permanent and cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <button
+                onClick={async () => {
+                  await deleteSession(deleteConfirmId);
+                  setDeleteConfirmId(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer bg-rose-500 hover:bg-rose-600 text-white transition-all shadow-md shadow-rose-500/20"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
