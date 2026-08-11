@@ -35,9 +35,9 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+    if (error.response && error.response.status === 401) {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      // If token exists but server returns 401/403, token is expired or invalid
+      // If token exists but server returns 401, token is expired or invalid
       if (token && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
         console.warn("Session expired or token invalid. Status:", error.response.status);
         localStorage.removeItem("user");

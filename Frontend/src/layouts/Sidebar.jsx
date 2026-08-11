@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react"; // HMR Trigger
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   SquarePen,
@@ -44,6 +44,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [showNoDbAlert, setShowNoDbAlert] = useState(false);
   const menuRef = useRef(null);
   const dbMenuRef = useRef(null);
 
@@ -105,7 +106,9 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
       {/* Brand Header & Sticky Target Connection Dropdown */}
       <div className="shrink-0 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 z-10">
         <div className="p-4 flex items-center justify-between">
-          <Logo size="sm" />
+          <NavLink to="/dashboard" onClick={onCloseMobile} className="block transition-transform hover:scale-105 active:scale-95">
+            <Logo size="sm" />
+          </NavLink>
           <button
             onClick={onCloseMobile}
             className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -115,7 +118,7 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         </div>
 
         {/* Target Database Select Dropdown (Pinned at Top) */}
-        <div className="px-3 pb-3 space-y-1.5">
+        <div className="px-3 pb-3 pt-4 space-y-1.5">
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Target Connection
@@ -190,6 +193,10 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         <div>
           <button
             onClick={() => {
+              if (connections.length === 0) {
+                setShowNoDbAlert(true);
+                return;
+              }
               createNewSession("New Chat Session", selectedConnectionId);
               navigate("/chat");
               onCloseMobile();
@@ -254,6 +261,17 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
         {/* Recents Conversation Sessions List (Filtered by Selected Database Connection) */}
         <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
           {(() => {
+            if (connections.length === 0) {
+              return (
+                <div className="mt-4 p-4 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
+                  <Database size={20} className="mx-auto mb-2 text-slate-400" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                    Select a database connection to view or start chats.
+                  </p>
+                </div>
+              );
+            }
+
             const displayedSessions = sessions.filter((s) => {
               const matchesSearch = !searchTerm.trim() || s.title.toLowerCase().includes(searchTerm.toLowerCase());
               const matchesConn = !selectedConnectionId || !s.connectionId || Number(s.connectionId) === Number(selectedConnectionId);
@@ -456,6 +474,31 @@ export const Sidebar = ({ isOpenMobile, onCloseMobile }) => {
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* No DB Connection Alert Modal */}
+      {showNoDbAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 w-full max-w-sm flex flex-col gap-5 animate-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <Database size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white font-display">No Connection Selected</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                Please create or select a database connection before starting a new chat session.
+              </p>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <Button
+                onClick={() => setShowNoDbAlert(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md shadow-blue-500/20"
+              >
+                Okay
+              </Button>
             </div>
           </div>
         </div>
