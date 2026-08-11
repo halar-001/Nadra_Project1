@@ -54,18 +54,7 @@ public class ChatSessionService {
         }
 
         if (connection == null) {
-            // Auto-create a default connection for user if none exists
-            connection = DatabaseConnection.builder()
-                    .user(user)
-                    .connectionName("Default Database Connection")
-                    .databaseType("MYSQL")
-                    .host("localhost")
-                    .port(3306)
-                    .databaseName("ai_db_assistant_v2")
-                    .username("root")
-                    .encryptedPassword("")
-                    .build();
-            connection = connectionRepository.save(connection);
+            throw new RuntimeException("No database connection specified. Please create a database connection first.");
         }
 
         String title = (request != null && request.getTitle() != null && !request.getTitle().isBlank())

@@ -68,7 +68,8 @@ public class JwtService {
 
     private boolean isTokenIssuedBeforeRestart(String token) {
         Date issuedAt = extractClaim(token, Claims::getIssuedAt);
-        return issuedAt != null && issuedAt.before(SERVER_START_TIME);
+        // JWT issuedAt is truncated to seconds, so we subtract 2000ms from SERVER_START_TIME to avoid false positives
+        return issuedAt != null && issuedAt.getTime() < (SERVER_START_TIME.getTime() - 2000);
     }
 
     private boolean isTokenExpired(String token) {
