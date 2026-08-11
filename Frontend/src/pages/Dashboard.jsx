@@ -38,6 +38,9 @@ export const Dashboard = () => {
   const { messages } = useChat();
   const navigate = useNavigate();
 
+  const userRoleStr = (user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER").replace("ROLE_", "");
+  const isAdmin = userRoleStr.toUpperCase() === "ADMIN";
+
   // Dynamic system counts
   const connectedCount = connections?.length || 0;
   const activeDbName = selectedConnection?.connectionName || connections[0]?.connectionName || "Local Database";
@@ -115,7 +118,7 @@ export const Dashboard = () => {
 
   // Auto-generate live stream logs every 4 seconds when live is active
   useEffect(() => {
-    if (!isLiveStreaming) return;
+    if (!isLiveStreaming || !isAdmin) return;
 
     let isOffline = false;
 
@@ -218,9 +221,6 @@ export const Dashboard = () => {
         return "text-sky-300 bg-sky-500/20 border border-sky-500/40";
     }
   };
-
-  const userRoleStr = (user?.role || (Array.isArray(user?.roles) ? user?.roles[0] : user?.roles) || "VIEWER").replace("ROLE_", "");
-  const isAdmin = userRoleStr.toUpperCase() === "ADMIN";
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-10">

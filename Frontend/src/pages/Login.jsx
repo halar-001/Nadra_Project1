@@ -185,7 +185,6 @@ export const Login = ({ initialTab = "login" }) => {
                         <label className="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                           PASSWORD
                         </label>
-                        <a href="#" className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700">Forgot?</a>
                       </div>
                       <div className="relative">
                         <Key size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
